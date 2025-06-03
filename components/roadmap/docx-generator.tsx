@@ -1,5 +1,5 @@
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, AlignmentType, BorderStyle, ISectionOptions } from "docx"
-import { TableData } from "./types"
+
 import { parseTableData } from "./utils"
 
 export const generateDOCX = async (roadmap: string) => {

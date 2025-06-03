@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, Clock, Users, Target, Download, Copy } from "lucide-react"
+import { Calendar, Clock, Users, Target, Download, Copy, ChevronDown } from "lucide-react"
 import { useState, useRef } from "react"
 import { RoadmapDisplayProps } from "./types"
 import { formatRoadmapContent } from "./content-formatter"
@@ -13,6 +13,12 @@ import { generateDOCX } from "./docx-generator"
 import { MilestoneTable, RiskTable } from "./tables"
 import { useTheme } from "next-themes"
 import { RoadmapCards } from "./roadmap-cards"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) => {
   const [isDownloading, setIsDownloading] = useState(false)
@@ -73,7 +79,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
         <CardHeader className="flex-none">
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Generating Roadmap
+            <h1 className="lg:text-xl text-lg">Generating Roadmap</h1>
           </CardTitle>
           <CardDescription>AI is analyzing your project and creating comprehensive roadmaps...</CardDescription>
         </CardHeader>
@@ -97,7 +103,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
         <CardHeader className="flex-none">
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Your Roadmap
+            <h1 className="lg:text-xl text-lg">Your Roadmap</h1>
           </CardTitle>
           <CardDescription>Your generated project roadmap will appear here</CardDescription>
         </CardHeader>
@@ -107,8 +113,8 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
               <Target className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <p className="font-medium">Ready to generate your roadmap</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-medium lg:text-base text-sm">Ready to generate your roadmap</p>
+              <p className="lg:text-sm text-xs text-muted-foreground">
                 Enter your project details or upload a file to get started
               </p>
             </div>
@@ -121,7 +127,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Project Roadmaps</h2>
+        <h2 className="lg:text-2xl text-xl font-bold">Project Roadmaps</h2>
       </div>
 
       <RoadmapCards
@@ -146,24 +152,16 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
                   <Copy className="h-4 w-4" />
                   {copied ? "Copied!" : "Copy"}
                 </Button>
-                <Button variant="outline" size="sm" onClick={downloadRoadmap} className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  TXT
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownload("pdf")}
-                  disabled={isDownloading || !currentRoadmap}
-                  className="flex items-center gap-2"
-                >
-                  {isDownloading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                      Downloading...
-                    </>
-                  ) : (
-                    <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <Download className="h-4 w-4" />
+                      Download
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={downloadRoadmap}>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -174,50 +172,79 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
+                        className="mr-2"
                       >
                         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                         <polyline points="14 2 14 8 20 8" />
                       </svg>
-                      PDF
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownload("docx")}
-                  disabled={isDownloading || !currentRoadmap}
-                  className="flex items-center gap-2"
-                >
-                  {isDownloading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                      Downloading...
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                      DOCX
-                    </>
-                  )}
-                </Button>
+                      TXT
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDownload("pdf")}
+                      disabled={isDownloading}
+                    >
+                      {isDownloading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="mr-2"
+                          >
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                          PDF
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDownload("docx")}
+                      disabled={isDownloading}
+                    >
+                      {isDownloading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="mr-2"
+                          >
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                          DOCX
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-auto">
+          <CardContent className="flex-1 overflow-auto custom-scrollbar">
             <div className="space-y-4" ref={contentRef}>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary" className="flex items-center gap-1">
@@ -236,7 +263,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
 
               <Separator />
 
-              <div className="space-y-2">
+              <div className={`space-y-2 ${theme === "dark" ? "text-slate-300" : "text-gray-900"}`}>
                 {formattedContent.map((item, index) => {
                   if (item.type === "milestone-table" && item.data && item.headers) {
                     return <MilestoneTable key={index} data={item.data} headers={item.headers} />
@@ -249,7 +276,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
                       <div
                         key={index}
                         className={`${item.className || ""} ${
-                          theme === "dark" ? "text-gray-200" : "text-gray-800"
+                          theme === "dark" ? "text-slate-300" : "text-gray-900"
                         }`}
                       >
                         {item.content}

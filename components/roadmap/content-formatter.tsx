@@ -1,7 +1,5 @@
-import { Circle, Clock } from "lucide-react"
-import { FormattedContentItem, TableParseResult } from "./types"
+import { FormattedContentItem } from "./types"
 import { parseTableData } from "./utils"
-import { MilestoneTable, RiskTable } from "./tables"
 
 export const formatRoadmapContent = (roadmap: string): FormattedContentItem[] => {
   const lines = roadmap.split("\n")
