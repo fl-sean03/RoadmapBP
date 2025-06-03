@@ -1,57 +1,48 @@
 import { Circle, Clock } from "lucide-react"
+import { FormattedContentItem, TableParseResult } from "./types"
 import { parseTableData } from "./utils"
 import { MilestoneTable, RiskTable } from "./tables"
 
-export const formatRoadmapContent = (content: string) => {
-  const lines = content.split("\n")
-  const formattedContent = []
-  let listItems = []
+export const formatRoadmapContent = (roadmap: string): FormattedContentItem[] => {
+  const lines = roadmap.split("\n")
+  const formattedContent: FormattedContentItem[] = []
   let i = 0
+
+  // Skip the initial title and introduction
+  while (i < lines.length) {
+    const line = lines[i].trim()
+    if (line === "Project Roadmap" || line.startsWith("Certainly!") || line.startsWith("---")) {
+      i++
+      continue
+    }
+    break
+  }
 
   while (i < lines.length) {
     const line = lines[i].trim()
 
     if (!line) {
-      if (listItems.length > 0) {
-        formattedContent.push(
-          <ul key={`list-${i}`} className="space-y-2 ml-4 mb-4">
-            {listItems.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <Circle className="h-2 w-2 mt-2 text-primary flex-shrink-0" />
-                <span className="text-sm leading-relaxed">{item}</span>
-              </li>
-            ))}
-          </ul>,
-        )
-        listItems = []
-      }
-      formattedContent.push(<div key={`space-${i}`} className="h-4" />)
+      formattedContent.push({
+        type: "text",
+        content: "",
+        className: "h-4",
+      })
       i++
       continue
     }
 
-    // Check for milestone or risk assessment tables
+    // Check for tables
     if (
       line.toLowerCase().includes("milestone") &&
       (line.includes("|") || lines[i + 1]?.includes("|") || lines[i + 2]?.includes("|"))
     ) {
-      if (listItems.length > 0) {
-        formattedContent.push(
-          <ul key={`list-before-milestone-${i}`} className="space-y-2 ml-4 mb-4">
-            {listItems.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <Circle className="h-2 w-2 mt-2 text-primary flex-shrink-0" />
-                <span className="text-sm leading-relaxed">{item}</span>
-              </li>
-            ))}
-          </ul>,
-        )
-        listItems = []
-      }
-
-      const { data, headers, endIndex } = parseTableData(content, i)
-      if (data.length > 0 && headers) {
-        formattedContent.push(<MilestoneTable key={i} data={data} headers={headers} />)
+      const { data, headers, endIndex } = parseTableData(roadmap, i)
+      if (data.length > 0 && headers.length > 0) {
+        formattedContent.push({
+          type: "milestone-table",
+          data,
+          headers,
+        })
       }
       i = endIndex
       continue
@@ -61,166 +52,88 @@ export const formatRoadmapContent = (content: string) => {
       line.toLowerCase().includes("risk") &&
       (line.includes("|") || lines[i + 1]?.includes("|") || lines[i + 2]?.includes("|"))
     ) {
-      if (listItems.length > 0) {
-        formattedContent.push(
-          <ul key={`list-before-risk-${i}`} className="space-y-2 ml-4 mb-4">
-            {listItems.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <Circle className="h-2 w-2 mt-2 text-primary flex-shrink-0" />
-                <span className="text-sm leading-relaxed">{item}</span>
-              </li>
-            ))}
-          </ul>,
-        )
-        listItems = []
-      }
-
-      const { data, headers, endIndex } = parseTableData(content, i)
-      if (data.length > 0 && headers) {
-        formattedContent.push(<RiskTable key={i} data={data} headers={headers} />)
+      const { data, headers, endIndex } = parseTableData(roadmap, i)
+      if (data.length > 0 && headers.length > 0) {
+        formattedContent.push({
+          type: "risk-table",
+          data,
+          headers,
+        })
       }
       i = endIndex
       continue
     }
 
-    // Main headings (##, ###, etc.)
-    const headingMatch = line.match(/^#{1,3}\s+/)
+    // Handle headings
+    const headingMatch = line.match(/^(#{1,3})\s+(.+)/)
     if (headingMatch) {
-      if (listItems.length > 0) {
-        formattedContent.push(
-          <ul key={`list-before-${i}`} className="space-y-2 ml-4 mb-4">
-            {listItems.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <Circle className="h-2 w-2 mt-2 text-primary flex-shrink-0" />
-                <span className="text-sm leading-relaxed">{item}</span>
-              </li>
-            ))}
-          </ul>,
-        )
-        listItems = []
-      }
-
-      const level = headingMatch[0].length
-      const text = line.replace(/^#+\s+/, "")
-
-      if (level === 1) {
-        formattedContent.push(
-          <h1 key={i} className="text-2xl font-bold text-primary mb-4 pb-2 border-b border-border">
-            {text}
-          </h1>,
-        )
-      } else if (level === 2) {
-        formattedContent.push(
-          <h2 key={i} className="text-xl font-semibold text-foreground mb-3 mt-6">
-            {text}
-          </h2>,
-        )
-      } else {
-        formattedContent.push(
-          <h3 key={i} className="text-lg font-medium text-foreground mb-2 mt-4">
-            {text}
-          </h3>,
-        )
-      }
+      const level = headingMatch[1].length
+      const text = headingMatch[2]
+      formattedContent.push({
+        type: "text",
+        content: text,
+        className: `text-${level === 1 ? "3xl" : level === 2 ? "2xl" : "xl"} font-bold text-gray-900`,
+      })
       i++
       continue
     }
 
-    // Bold text patterns
+    // Handle bold text
     if (line.match(/^\*\*.*\*\*:?$/) || line.match(/^[A-Z][^:]*:$/)) {
-      if (listItems.length > 0) {
-        formattedContent.push(
-          <ul key={`list-before-bold-${i}`} className="space-y-2 ml-4 mb-4">
-            {listItems.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <Circle className="h-2 w-2 mt-2 text-primary flex-shrink-0" />
-                <span className="text-sm leading-relaxed">{item}</span>
-              </li>
-            ))}
-          </ul>,
-        )
-        listItems = []
-      }
-
       const text = line.replace(/\*\*/g, "").replace(/:$/, "")
-      formattedContent.push(
-        <h4 key={i} className="font-semibold text-primary mb-2 mt-4">
-          {text}
-        </h4>,
-      )
+      formattedContent.push({
+        type: "text",
+        content: text,
+        className: "text-lg font-semibold text-blue-600",
+      })
       i++
       continue
     }
 
-    // List items (-, *, •, numbers)
+    // Handle list items
     if (line.match(/^[-*•]\s+/) || line.match(/^\d+\.\s+/)) {
       const text = line.replace(/^[-*•]\s+/, "").replace(/^\d+\.\s+/, "")
-      listItems.push(text)
+      formattedContent.push({
+        type: "text",
+        content: `• ${text}`,
+        className: "ml-4",
+      })
       i++
       continue
     }
 
-    // Phase or step indicators
+    // Handle phase indicators
     if (line.match(/^(Phase|Step|Stage)\s+\d+/i)) {
-      if (listItems.length > 0) {
-        formattedContent.push(
-          <ul key={`list-before-phase-${i}`} className="space-y-2 ml-4 mb-4">
-            {listItems.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <Circle className="h-2 w-2 mt-2 text-primary flex-shrink-0" />
-                <span className="text-sm leading-relaxed">{item}</span>
-              </li>
-            ))}
-          </ul>,
-        )
-        listItems = []
-      }
-
-      formattedContent.push(
-        <div key={i} className="bg-primary/5 border-l-4 border-primary p-4 mb-4 rounded-r-lg">
-          <h3 className="font-semibold text-primary mb-2">{line}</h3>
-        </div>,
-      )
+      formattedContent.push({
+        type: "text",
+        content: line,
+        className: "text-lg font-semibold text-blue-600 border-l-4 border-blue-600 pl-4 bg-blue-50 py-2",
+      })
       i++
       continue
     }
 
-    // Timeline indicators
+    // Handle timeline indicators
     if (line.match(/\b\d+\s*(weeks?|months?|days?)\b/i)) {
-      formattedContent.push(
-        <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-          <Clock className="h-4 w-4" />
-          <span>{line}</span>
-        </div>,
-      )
+      formattedContent.push({
+        type: "text",
+        content: `⏱ ${line}`,
+        className: "text-gray-500",
+      })
       i++
       continue
     }
 
     // Regular paragraphs
-    if (line.length > 0 && listItems.length === 0) {
-      formattedContent.push(
-        <p key={i} className="text-sm leading-relaxed mb-3 text-muted-foreground">
-          {line}
-        </p>,
-      )
+    if (line.length > 0) {
+      formattedContent.push({
+        type: "text",
+        content: line,
+        className: "text-gray-700",
+      })
     }
 
     i++
-  }
-
-  // Handle remaining list items
-  if (listItems.length > 0) {
-    formattedContent.push(
-      <ul key="final-list" className="space-y-2 ml-4 mb-4">
-        {listItems.map((item, idx) => (
-          <li key={idx} className="flex items-start gap-2">
-            <Circle className="h-2 w-2 mt-2 text-primary flex-shrink-0" />
-            <span className="text-sm leading-relaxed">{item}</span>
-          </li>
-        ))}
-      </ul>,
-    )
   }
 
   return formattedContent

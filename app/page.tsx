@@ -15,7 +15,11 @@ import React from "react"
 
 export default function Home() {
   const [projectBrief, setProjectBrief] = useState("")
-  const [roadmap, setRoadmap] = useState("")
+  const [roadmap, setRoadmap] = useState<{
+    roadmap1: string
+    roadmap2: string
+    roadmap3: string
+  } | undefined>(undefined)
   const [isGenerating, setIsGenerating] = useState(false)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)

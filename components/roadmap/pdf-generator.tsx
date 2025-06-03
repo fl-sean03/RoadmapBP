@@ -49,8 +49,9 @@ export const generatePDF = async (roadmap: string) => {
 
       // Calculate column widths
       const colWidth = pageWidth / headers.length
-      const minRowHeight = 8
-      const cellPadding = 2
+      const minRowHeight = 10 // Increased from 8
+      const cellPadding = 4 // Increased from 2
+      const lineSpacing = 5 // Added line spacing
 
       // Draw table headers
       checkPageBreak(minRowHeight)
@@ -79,7 +80,7 @@ export const generatePDF = async (roadmap: string) => {
           const cellText = row[header] || ""
           const wrappedText = pdf.splitTextToSize(cellText, colWidth - cellPadding * 2)
           cellContents[colIndex] = wrappedText
-          const cellHeight = Math.max(minRowHeight, wrappedText.length * 4 + cellPadding)
+          const cellHeight = Math.max(minRowHeight, wrappedText.length * lineSpacing + cellPadding * 2)
           maxCellHeight = Math.max(maxCellHeight, cellHeight)
         })
 
@@ -104,7 +105,7 @@ export const generatePDF = async (roadmap: string) => {
           // Draw cell content
           const cellText = row[header] || ""
           const textX = x + cellPadding
-          const textY = yPosition
+          const textY = yPosition + cellPadding // Added padding to top of cell
 
           // Handle special formatting for status and priority columns
           if (header.toLowerCase().includes("status") || header.toLowerCase().includes("priority")) {
@@ -126,7 +127,7 @@ export const generatePDF = async (roadmap: string) => {
           // Add wrapped text with proper vertical alignment
           const wrappedText = cellContents[colIndex]
           wrappedText.forEach((line, lineIndex) => {
-            pdf.text(line, textX, textY + lineIndex * 4)
+            pdf.text(line, textX, textY + lineIndex * lineSpacing)
           })
         })
 
