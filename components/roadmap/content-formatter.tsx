@@ -1,138 +1,84 @@
 import { FormattedContentItem } from "./types"
-import { parseTableData } from "./utils"
 
 export const formatRoadmapContent = (roadmap: string): FormattedContentItem[] => {
-  const lines = roadmap.split("\n")
-  const formattedContent: FormattedContentItem[] = []
-  let i = 0
-
-  // Skip the initial title and introduction
-  while (i < lines.length) {
-    const line = lines[i].trim()
-    if (line === "Project Roadmap" || line.startsWith("Certainly!") || line.startsWith("---")) {
-      i++
-      continue
+  if (!roadmap) return [];
+  
+  const lines = roadmap.split("\n");
+  const formattedContent: FormattedContentItem[] = [];
+  let inExecutiveSummary = false;
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    
+    if (!trimmedLine) {
+      continue;
     }
-    break
-  }
-
-  while (i < lines.length) {
-    const line = lines[i].trim()
-
-    if (!line) {
+    
+    if (trimmedLine.toLowerCase() === "executive summary") {
+      inExecutiveSummary = true;
+      continue; 
+    }
+    
+    if (trimmedLine.toLowerCase().startsWith("phase")) {
+      inExecutiveSummary = false;
+    }
+    
+    if (inExecutiveSummary) {
+      formattedContent.push({
+        type: "text",
+        content: "Executive Summary:",
+        className: "executive-summary lg:text-base text-sm font-bold text-gray-900 dark:text-gray-200 bg-[#e5f9f6] dark:bg-[#001f1c] lg:px-4 px-3 lg:pt-4 pt-3 rounded-t border-l-4 border-[#00bfa5]",
+      });
+      formattedContent.push({
+        type: "text",
+        content: trimmedLine,
+        className: "executive-summary lg:text-base text-sm text-gray-900 dark:text-gray-200 mb-6 bg-[#e5f9f6] dark:bg-[#001f1c] lg:px-4 px-3 lg:pb-4 pb-3 rounded-b border-l-4 border-[#00bfa5] !-mt-0 pt-1 !mb-6",
+      });
+      continue;
+    }
+    
+    if (trimmedLine.toLowerCase().startsWith("phase")) {
+      formattedContent.push({
+        type: "text",
+        content: trimmedLine,
+        className: "phase-header lg:text-2xl text-lg font-bold text-blue-600 mb-6",
+      });
+      continue;
+    }
+    
+    if (trimmedLine === "---" || trimmedLine.toLowerCase().includes("key metrics")) {
       formattedContent.push({
         type: "text",
         content: "",
-        className: "h-4",
-      })
-      i++
-      continue
-    }
-
-    // Check for tables
-    if (
-      line.toLowerCase().includes("milestone") &&
-      (line.includes("|") || lines[i + 1]?.includes("|") || lines[i + 2]?.includes("|"))
-    ) {
-      const { data, headers, endIndex } = parseTableData(roadmap, i)
-      if (data.length > 0 && headers.length > 0) {
+        className: " !my-8 !w-full roadmap-metrics-divider",
+      });
+      
+      if (trimmedLine.toLowerCase().includes("key metrics")) {
         formattedContent.push({
-          type: "milestone-table",
-          data,
-          headers,
-        })
+          type: "text",
+          content: trimmedLine,
+          className: "!lg:text-lg !text-base !font-semibold !text-gray-900 dark:!text-gray-200 !mt-6 !mb-2 pt-4 !border-t-[1px] !border-solid !border-gray-200 dark:!border-gray-600",
+        });
       }
-      i = endIndex
-      continue
+      continue;
     }
-
-    if (
-      line.toLowerCase().includes("risk") &&
-      (line.includes("|") || lines[i + 1]?.includes("|") || lines[i + 2]?.includes("|"))
-    ) {
-      const { data, headers, endIndex } = parseTableData(roadmap, i)
-      if (data.length > 0 && headers.length > 0) {
-        formattedContent.push({
-          type: "risk-table",
-          data,
-          headers,
-        })
-      }
-      i = endIndex
-      continue
-    }
-
-    // Handle headings
-    const headingMatch = line.match(/^(#{1,3})\s+(.+)/)
-    if (headingMatch) {
-      const level = headingMatch[1].length
-      const text = headingMatch[2]
+    
+    if (trimmedLine.startsWith("•") || trimmedLine.startsWith("-") || trimmedLine.match(/^\d+\./)) {
+      const bulletPoint = trimmedLine.replace(/^[•-]\s*/, "").replace(/^\d+\.\s*/, "");
       formattedContent.push({
         type: "text",
-        content: text,
-        className: `text-${level === 1 ? "3xl" : level === 2 ? "2xl" : "xl"} font-bold text-gray-900`,
-      })
-      i++
-      continue
+        content: `• ${bulletPoint}`,
+        className: "lg:ml-4 ml-2 mb-2 lg:text-base text-sm text-gray-700",
+      });
+      continue;
     }
-
-    // Handle bold text
-    if (line.match(/^\*\*.*\*\*:?$/) || line.match(/^[A-Z][^:]*:$/)) {
-      const text = line.replace(/\*\*/g, "").replace(/:$/, "")
-      formattedContent.push({
-        type: "text",
-        content: text,
-        className: "text-lg font-semibold text-blue-600",
-      })
-      i++
-      continue
-    }
-
-    // Handle list items
-    if (line.match(/^[-*•]\s+/) || line.match(/^\d+\.\s+/)) {
-      const text = line.replace(/^[-*•]\s+/, "").replace(/^\d+\.\s+/, "")
-      formattedContent.push({
-        type: "text",
-        content: `• ${text}`,
-        className: "ml-4",
-      })
-      i++
-      continue
-    }
-
-    // Handle phase indicators
-    if (line.match(/^(Phase|Step|Stage)\s+\d+/i)) {
-      formattedContent.push({
-        type: "text",
-        content: line,
-        className: "text-lg font-semibold text-blue-600 border-l-4 border-blue-600 pl-4 bg-blue-50 py-2",
-      })
-      i++
-      continue
-    }
-
-    // Handle timeline indicators
-    if (line.match(/\b\d+\s*(weeks?|months?|days?)\b/i)) {
-      formattedContent.push({
-        type: "text",
-        content: `⏱ ${line}`,
-        className: "text-gray-500",
-      })
-      i++
-      continue
-    }
-
-    // Regular paragraphs
-    if (line.length > 0) {
-      formattedContent.push({
-        type: "text",
-        content: line,
-        className: "text-gray-700",
-      })
-    }
-
-    i++
+    
+    formattedContent.push({
+      type: "text",
+      content: trimmedLine,
+      className: "lg:text-base text-sm text-gray-700 mb-2",
+    });
   }
-
-  return formattedContent
+  
+  return formattedContent;
 } 

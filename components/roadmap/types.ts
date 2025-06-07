@@ -1,8 +1,6 @@
 export interface RoadmapDisplayProps {
   roadmap?: {
-    roadmap1: string
-    roadmap2: string
-    roadmap3: string
+    roadmap: string
   }
   isGenerating: boolean
 }

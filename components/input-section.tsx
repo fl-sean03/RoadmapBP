@@ -25,7 +25,7 @@ export const InputSection = ({
 }: InputSectionProps) => {
   return (
     <div className="lg:space-y-6 space-y-4">
-      <Card className="h-[calc(90vh-8rem)] flex flex-col border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors">
+      <Card className="lg:h-[calc(90vh-8rem)] h-fit flex flex-col border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors">
         <CardHeader className="flex-none">
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -50,13 +50,13 @@ export const InputSection = ({
                   placeholder="Describe your project in detail. Include goals, target audience, key features, timeline, and any specific requirements..."
                   value={projectBrief}
                   onChange={(e) => setProjectBrief(e.target.value)}
-                  className="min-h-[200px] resize-none"
+                  className="min-h-[250px] resize-none"
                 />
               </div>
               <Button
                 onClick={onTextSubmit}
                 disabled={!projectBrief.trim() || isGenerating}
-                className="w-full text-white"
+                className="w-full text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 dark:hover:text-black"
                 size="lg"
               >
                 {isGenerating ? (
@@ -80,32 +80,7 @@ export const InputSection = ({
         </CardContent>
       </Card>
 
-      {/* Features */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">What you'll get</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-primary rounded-full" />
-              <span className="text-sm">Detailed project phases and milestones</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-primary rounded-full" />
-              <span className="text-sm">Timeline estimates and dependencies</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-primary rounded-full" />
-              <span className="text-sm">Resource allocation recommendations</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-primary rounded-full" />
-              <span className="text-sm">Risk assessment and mitigation strategies</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      
     </div>
   )
 } 

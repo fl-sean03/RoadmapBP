@@ -7,9 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AI Roadmap Generator",
+  title: "RoadmapBP - AI Roadmap Generator",
   description: "Transform your project ideas into actionable roadmaps with AI",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({

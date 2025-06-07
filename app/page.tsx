@@ -12,9 +12,7 @@ import { InputSection } from "@/components/input-section"
 export default function Home() {
   const [projectBrief, setProjectBrief] = useState("")
   const [roadmap, setRoadmap] = useState<{
-    roadmap1: string
-    roadmap2: string
-    roadmap3: string
+    roadmap: string
   } | undefined>(undefined)
   const [isGenerating, setIsGenerating] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -57,7 +55,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-4 py-8">
+      <div className=" mx-auto px-3 lg:px-4 lg:py-8 py-6 2xl:max-w-[85vw] xl:max-w-[95vw] lg:max-w-[100vw] md:max-w-[95vw] sm:max-w-[100vw]">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
