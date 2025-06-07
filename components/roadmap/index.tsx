@@ -1,41 +1,154 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, Clock, Users, Target, Download, Copy, FileDown } from "lucide-react"
+import { Target, Download, Copy, ChevronDown, Check } from "lucide-react"
 import { useState, useRef } from "react"
-import { RoadmapDisplayProps } from "./types"
+import { RoadmapDisplayProps, FormattedContentItem } from "./types"
 import { formatRoadmapContent } from "./content-formatter"
 import { generatePDF } from "./pdf-generator"
+import { generateDOCX } from "./docx-generator"
+import { useTheme } from "next-themes"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-export function RoadmapDisplay({ roadmap, isGenerating }: RoadmapDisplayProps) {
+export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) => {
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [isPhaseDownloading, setIsPhaseDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [phaseCopied, setPhaseCopied] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
+  const { theme } = useTheme()
+  const [selectedPhase, setSelectedPhase] = useState<number>(1)
 
-  const copyToClipboard = async () => {
+  const formatContent = (phaseContent?: any[]) => {
+    if (phaseContent) {
+      return phaseContent
+        .map(item => {
+          if (item.type === "text") return item.content
+          if (item.type === "milestone-table" || item.type === "risk-table") {
+            return `${item.headers.join(" | ")}\n${item.data.map((row: string[]) => row.join(" | ")).join("\n")}`
+          }
+          return ""
+        })
+        .filter(Boolean)
+        .join("\n\n")
+    }
+    return roadmap?.roadmap
+  }
+
+  const copyToClipboard = async (phaseContent?: any[]) => {
+    const content = formatContent(phaseContent)
+    if (!content) return
+    
     try {
-      await navigator.clipboard.writeText(roadmap)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(content)
+      if (phaseContent) {
+        setPhaseCopied(true)
+        setTimeout(() => setPhaseCopied(false), 2000)
+      } else {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
     } catch (err) {
       console.error("Failed to copy text: ", err)
     }
   }
 
-  const downloadRoadmap = () => {
+  const downloadRoadmap = (phaseContent?: any[]) => {
+    const content = phaseContent 
+      ? phaseContent
+          .map(item => {
+            if (item.type === "text") return item.content
+            if (item.type === "milestone-table" || item.type === "risk-table") {
+              return `${item.headers.join(" | ")}\n${item.data.map((row: string[]) => row.join(" | ")).join("\n")}`
+            }
+            return ""
+          })
+          .filter(Boolean)
+          .join("\n\n")
+      : roadmap?.roadmap
+    
+    if (!content) return
+
     const element = document.createElement("a")
-    const file = new Blob([roadmap], { type: "text/plain" })
+    const file = new Blob([content], { type: "text/plain" })
     element.href = URL.createObjectURL(file)
-    element.download = "project-roadmap.txt"
+    element.download = phaseContent ? `phase-${selectedPhase}-roadmap.txt` : "project-roadmap.txt"
     document.body.appendChild(element)
     element.click()
     document.body.removeChild(element)
   }
 
-  const downloadPDF = async () => {
-    await generatePDF(roadmap)
+  const handleDownload = async (format: "pdf" | "docx", phaseContent?: any[]) => {
+    const content = phaseContent 
+      ? phaseContent
+          .map(item => {
+            if (item.type === "text") return item.content
+            if (item.type === "milestone-table" || item.type === "risk-table") {
+              return `${item.headers.join(" | ")}\n${item.data.map((row: string[]) => row.join(" | ")).join("\n")}`
+            }
+            return ""
+          })
+          .filter(Boolean)
+          .join("\n\n")
+      : roadmap?.roadmap
+
+    if (!content) return
+    
+    const downloadingState = phaseContent ? setIsPhaseDownloading : setIsDownloading
+    downloadingState(true)
+    try {
+      if (format === "pdf") {
+        await generatePDF(content)
+      } else {
+        await generateDOCX(content)
+      }
+    } catch (error) {
+      console.error(`Error generating ${format.toUpperCase()}:`, error)
+    } finally {
+      downloadingState(false)
+    }
+  }
+
+  const formattedContent = formatRoadmapContent(roadmap?.roadmap || "")
+
+  const phases: FormattedContentItem[][] = [];
+  let currentPhaseItems: FormattedContentItem[] = [];
+
+  formattedContent.forEach(item => {
+    const isExecutiveSummary = item.className?.includes('executive-summary');
+
+    // A phase header always belongs to the block that started with an executive summary.
+    // However, the start of a new block is an executive summary.
+    if (isExecutiveSummary && currentPhaseItems.some(i => i.className?.includes('phase-header'))) {
+        // This condition means we've hit a new executive summary,
+        // and the previous phase (which has a header) is complete.
+        if (currentPhaseItems.length > 0) {
+            phases.push(currentPhaseItems);
+            currentPhaseItems = [];
+        }
+    }
+    
+    currentPhaseItems.push(item);
+  });
+
+  if (currentPhaseItems.length > 0) {
+      phases.push(currentPhaseItems);
+  }
+
+  // Ensure there are always 3 phases for display
+  while (phases.length < 3) {
+      phases.push([{
+        type: "text",
+        content: `Phase ${phases.length + 1}`,
+        className: "text-2xl font-bold text-blue-600 mb-6"
+      }]);
   }
 
   if (isGenerating) {
@@ -44,7 +157,7 @@ export function RoadmapDisplay({ roadmap, isGenerating }: RoadmapDisplayProps) {
         <CardHeader className="flex-none">
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Generating Roadmap
+            <h1 className="lg:text-xl text-lg">Generating Roadmap</h1>
           </CardTitle>
           <CardDescription>AI is analyzing your project and creating a comprehensive roadmap...</CardDescription>
         </CardHeader>
@@ -68,7 +181,7 @@ export function RoadmapDisplay({ roadmap, isGenerating }: RoadmapDisplayProps) {
         <CardHeader className="flex-none">
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Your Roadmap
+            <h1 className="lg:text-xl text-lg">Your Roadmap</h1>
           </CardTitle>
           <CardDescription>Your generated project roadmap will appear here</CardDescription>
         </CardHeader>
@@ -78,8 +191,8 @@ export function RoadmapDisplay({ roadmap, isGenerating }: RoadmapDisplayProps) {
               <Target className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <p className="font-medium">Ready to generate your roadmap</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-medium lg:text-base text-sm">Ready to generate your roadmap</p>
+              <p className="lg:text-sm text-xs text-muted-foreground">
                 Enter your project details or upload a file to get started
               </p>
             </div>
@@ -90,54 +203,265 @@ export function RoadmapDisplay({ roadmap, isGenerating }: RoadmapDisplayProps) {
   }
 
   return (
-    <Card className="h-[calc(90vh-8rem)] flex flex-col">
-      <CardHeader className="flex-none">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Generated Roadmap
-            </CardTitle>
-            <CardDescription>Your comprehensive project roadmap</CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={copyToClipboard} className="flex items-center gap-2">
-              <Copy className="h-4 w-4" />
-              {copied ? "Copied!" : "Copy"}
-            </Button>
-            <Button variant="outline" size="sm" onClick={downloadRoadmap} className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              TXT
-            </Button>
-            <Button variant="outline" size="sm" onClick={downloadPDF} className="flex items-center gap-2">
-              <FileDown className="h-4 w-4" />
-              PDF
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="lg:text-2xl text-xl font-bold">Project Roadmap</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => copyToClipboard()}>
+            {copied ? <Check className="lg:h-4 lg:w-4 h-3 w-3 lg:mr-2 mr-1" /> : <Copy className="lg:h-4 lg:w-4 h-3 w-3 lg:mr-2 mr-1" />}
+            <span className="hidden lg:block">{copied ? "Copied!" : "Copy Full Roadmap"}</span>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="lg:h-4 lg:w-4 h-3 w-3 lg:mr-2 mr-1" />
+                <span className="hidden lg:block">Download Full Roadmap</span>
+                <ChevronDown className="lg:h-4 lg:w-4 h-3 w-3 lg:ml-2 ml-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => downloadRoadmap()}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2"
+                >
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                TXT
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownload("pdf")} disabled={isDownloading}>
+                {isDownloading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mr-2"
+                    >
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    PDF
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownload("docx")} disabled={isDownloading}>
+                {isDownloading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mr-2"
+                    >
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    DOCX
+                  </>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-auto">
-        <div className="space-y-4" ref={contentRef}>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              Timeline Included
-            </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              Resource Planning
-            </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              Milestone Tracking
-            </Badge>
-          </div>
+      </div>
 
+      {/* Phase Selection Cards */}
+      <div className="grid grid-cols-3 md:grid-cols-3 lg:gap-4 gap-2">
+        {[1, 2, 3].map((phase) => (
+          <Card
+            key={phase}
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              selectedPhase === phase ? "ring-2 ring-primary" : ""
+            }`}
+            onClick={() => setSelectedPhase(phase)}
+          >
+            <CardHeader className="flex lg:flex-row flex-col items-center gap-0.5">
+              <div className="lg:p-2 p-1 rounded-lg bg-primary/10">
+                <Target className="lg:h-5 lg:w-5 h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle className="lg:text-lg text-base">Phase {phase}</CardTitle>
+                <CardDescription className="hidden lg:block">Click to view this phase</CardDescription>
+              </div>
+            </CardHeader>
+          </Card>
+        ))}
+      </div>
+
+      {/* Phase Content */}
+      <Card className="h-[calc(80vh-8rem)] flex flex-col">
+        <CardHeader className="flex-none">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 lg:text-xl text-lg">
+                <Target className="lg:h-5 lg:w-5 h-4 w-4" />
+                Phase {selectedPhase}
+              </CardTitle>
+              <CardDescription>Project phase details and milestones</CardDescription>
+            </div>
+            {phases[selectedPhase - 1] && phases[selectedPhase - 1].length > 0 && (
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => copyToClipboard(phases[selectedPhase - 1])}
+                >
+                  {phaseCopied ? <Check className="lg:h-4 lg:w-4 h-3 w-3 lg:mr-2 mr-1" /> : <Copy className="lg:h-4 lg:w-4 h-3 w-3 lg:mr-2 mr-1" />}
+                  <span className="hidden lg:block">{phaseCopied ? "Copied!" : "Copy Phase"}</span>
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="lg:h-4 lg:w-4 h-3 w-3 lg:mr-2 mr-1" />
+                      <span className="hidden lg:block">Download Phase {selectedPhase}</span>
+                      <ChevronDown className="lg:h-4 lg:w-4 h-3 w-3 lg:ml-2 ml-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => downloadRoadmap(phases[selectedPhase - 1])}>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="mr-2"
+                      >
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                      TXT
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDownload("pdf", phases[selectedPhase - 1])} 
+                      disabled={isPhaseDownloading}
+                    >
+                      {isPhaseDownloading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="mr-2"
+                          >
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                          PDF
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDownload("docx", phases[selectedPhase - 1])} 
+                      disabled={isPhaseDownloading}
+                    >
+                      {isPhaseDownloading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="mr-2"
+                          >
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                          DOCX
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+          </div>
+          
           <Separator />
-
-          <div className="space-y-2">{formatRoadmapContent(roadmap)}</div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-auto custom-scrollbar" ref={contentRef}>
+          {phases[selectedPhase - 1] && phases[selectedPhase - 1].length > 0 ? (
+            <div className={`space-y-2 ${theme === "dark" ? "text-slate-300" : "text-gray-900"}`}>
+              {phases[selectedPhase - 1].map((item: any, index: number) => {
+                if (item.type === "text" && item.content) {
+                  return (
+                    <div
+                      key={index}
+                      className={`${item.className || ""} ${
+                        theme === "dark" ? "text-slate-300" : "text-gray-900"
+                      }`}
+                    >
+                      {item.content}
+                    </div>
+                  )
+                }
+                return null
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              No content available for this phase
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 } 

@@ -1,6 +1,5 @@
 import jsPDF from "jspdf"
 import { TableData } from "./types"
-import { parseTableData } from "./utils"
 
 export const generatePDF = async (roadmap: string) => {
   try {
@@ -10,152 +9,311 @@ export const generatePDF = async (roadmap: string) => {
       format: "a4",
     })
 
-    // Set up fonts and colors
-    pdf.setFont("helvetica", "normal")
-    
-    let yPosition = 20
-    const margin = 20
-    const pageWidth = 210 - margin * 2
-    const pageHeight = 297
-    const lineHeight = 6
+    // Enhanced color palette
+    const colors = {
+      primary: [100, 115, 140],      // Blue-600
+      secondary: [66, 77, 84],   // Indigo-500
+      accent: [16, 185, 129],      // Emerald-500
+      text: {
+        primary: [17, 24, 39],     // Gray-900
+        secondary: [55, 65, 81],   // Gray-700
+        muted: [107, 114, 128],    // Gray-500
+      },
+      background: {
+        light: [249, 250, 251],    // Gray-50
+        accent: [239, 246, 255],   // Blue-50
+        success: [236, 253, 245],  // Emerald-50
+        warning: [255, 251, 235],  // Amber-50
+      },
+      border: [229, 231, 235],     // Gray-200
+    }
+
+    // Typography settings
+    const typography = {
+      title: { size: 24, weight: "bold" },
+      heading1: { size: 16, weight: "bold" },
+      heading2: { size: 12, weight: "bold" },
+      heading3: { size: 11, weight: "bold" },
+      body: { size: 11, weight: "normal" },
+      small: { size: 9, weight: "normal" },
+      caption: { size: 8, weight: "normal" },
+    }
+
+    // Layout settings
+    const layout = {
+      margin: 15,
+      pageWidth: 210,
+      pageHeight: 297,
+      contentWidth: 175, // 210 - 40 (margins)
+      lineHeight: 6,
+      sectionSpacing: 12,
+      paragraphSpacing: 8,
+    }
+
+    let yPosition = layout.margin
+    let isFirstPhase = true;
 
     // Helper function to check if we need a new page
-    const checkPageBreak = (requiredSpace = lineHeight) => {
-      if (yPosition + requiredSpace > pageHeight - margin) {
+    const checkPageBreak = (requiredSpace = layout.lineHeight) => {
+      if (yPosition + requiredSpace > layout.pageHeight - layout.margin) {
         pdf.addPage()
-        yPosition = margin
+        yPosition = layout.margin
+        return true
       }
+      return false
     }
 
-    // Helper function to add text with word wrapping
-    const addText = (text: string, fontSize = 11, fontStyle = "normal", color = [0, 0, 0], indent = 0) => {
+    // Helper function to add a decorative header line
+    const addHeaderLine = () => {
+      pdf.setDrawColor(235, 235, 235)
+      pdf.setLineWidth(0.3)
+      pdf.line(layout.margin, yPosition, layout.margin + layout.contentWidth, yPosition)
+      yPosition += 4
+    }
+
+    // Enhanced text function with better styling
+    const addText = (
+      text: string, 
+      style = typography.body, 
+      color = colors.text.primary, 
+      indent = 0,
+      alignment: 'left' | 'center' | 'right' = 'left'
+    ) => {
       checkPageBreak()
-      pdf.setFont("helvetica", fontStyle)
-      pdf.setFontSize(fontSize)
+      pdf.setFont("helvetica", style.weight as any)
+      pdf.setFontSize(style.size)
       pdf.setTextColor(color[0], color[1], color[2])
 
-      const splitText = pdf.splitTextToSize(text, pageWidth - indent)
-      pdf.text(splitText, margin + indent, yPosition)
-      yPosition += lineHeight * splitText.length
+      const splitText = pdf.splitTextToSize(text, layout.contentWidth - indent)
+      
+      let xPosition = layout.margin + indent
+      if (alignment === 'center') {
+        xPosition = layout.pageWidth / 2
+      } else if (alignment === 'right') {
+        xPosition = layout.margin + layout.contentWidth
+      }
+
+      pdf.text(splitText, xPosition, yPosition, { align: alignment })
+      yPosition += layout.lineHeight * splitText.length
     }
 
-    // Helper function to add a table
+    // Enhanced section header
+    const addSectionHeader = (title: string, level: 1 | 2 | 3 = 1) => {
+      checkPageBreak(20)
+      yPosition += layout.sectionSpacing
+
+      const styles = {
+        1: { typography: typography.heading1, color: [30, 41, 59] }, // slate-800
+        2: { typography: typography.heading2, color: colors.secondary },
+        3: { typography: typography.heading3, color: colors.text.primary },
+      }
+
+      const style = styles[level]
+      
+      // No background for level 1 headers
+
+      addText(title, style.typography, style.color, level === 1 ? 5 : 0)
+      
+      if (level === 1) {
+        addHeaderLine()
+      }
+      
+      yPosition += 4
+    }
+
+    // Enhanced executive summary box
+    const addExecutiveSummary = (content: string) => {
+      checkPageBreak(40)
+      
+      const padding = 4 // Equal padding top and bottom
+      // Dynamically calculate box height based on content
+      pdf.setFont("helvetica", "normal")
+      pdf.setFontSize(10)
+      const wrappedContent = pdf.splitTextToSize(content, layout.contentWidth - padding * 2 - 15)
+      const contentHeight = wrappedContent.length * 6; // 6 is approx line height
+      const boxHeight = padding + 6 + contentHeight + padding; // top padding + title + content + bottom padding
+      
+      // Main background (slate-100: rgb(241,245,249))
+      pdf.setFillColor(241, 245, 249)
+      pdf.rect(layout.margin, yPosition, layout.contentWidth, boxHeight, "F")
+      
+      // Left accent border (slate-500: rgb(100,116,139))
+      pdf.setFillColor(100, 116, 139)
+      pdf.rect(layout.margin, yPosition, 2, boxHeight, "F")
+      
+      // Icon/Symbol (using text)
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(16)
+      pdf.setTextColor(colors.accent[0], colors.accent[1], colors.accent[2])
+      pdf.text("", layout.margin + padding, yPosition + 12)
+      
+      // Title
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(12)
+      pdf.setTextColor(colors.text.primary[0], colors.text.primary[1], colors.text.primary[2])
+      pdf.text("Executive Summary", layout.margin + padding + 4, yPosition + padding + 4)
+      
+      // Content
+      pdf.setFont("helvetica", "normal")
+      pdf.setFontSize(10)
+      pdf.setTextColor(colors.text.secondary[0], colors.text.secondary[1], colors.text.secondary[2])
+      pdf.text(wrappedContent, layout.margin + padding + 4, yPosition + padding + 12)
+      
+      yPosition += boxHeight + layout.sectionSpacing
+    }
+
+    // Enhanced bullet points
+    const addBulletPoint = (text: string, level = 0) => {
+      checkPageBreak()
+      const indent = 8 + (level * 12)
+      const bullets = ["•", "◦", "▪"]
+      const bullet = bullets[Math.min(level, bullets.length - 1)]
+
+      // Draw the bullet with a larger font size and slate-800 color
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(13)
+      pdf.setTextColor(30, 41, 59)
+      pdf.text(bullet, layout.margin + indent, yPosition)
+
+      // Draw the text with normal size and color
+      pdf.setFont("helvetica", "normal")
+      pdf.setFontSize(typography.body.size)
+      pdf.setTextColor(colors.text.secondary[0], colors.text.secondary[1], colors.text.secondary[2])
+      const wrappedText = pdf.splitTextToSize(text, layout.contentWidth - indent - 8)
+      pdf.text(wrappedText, layout.margin + indent + 8, yPosition)
+      
+      yPosition += layout.lineHeight * wrappedText.length + 2
+    }
+
+    // Enhanced table function
     const addTable = (headers: string[], data: TableData[], title: string) => {
-      checkPageBreak(30) // Reserve space for table header
-
-      // Add table title
-      addText(title, 14, "bold", [0, 100, 200])
-      yPosition += 5
-
-      // Calculate column widths
-      const colWidth = pageWidth / headers.length
-      const minRowHeight = 8
-      const cellPadding = 2
-
-      // Draw table headers
-      checkPageBreak(minRowHeight)
-      pdf.setFillColor(240, 240, 240)
-      pdf.rect(margin, yPosition - 5, pageWidth, minRowHeight, "F")
-
+      checkPageBreak(50)
+      
+      // Table title with icon
+      pdf.setFont("helvetica", "bold")
+      pdf.setFontSize(14)
+      pdf.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2])
+      pdf.text("" + title, layout.margin, yPosition)
+      yPosition += 12
+      
+      const colWidth = layout.contentWidth / headers.length
+      const headerHeight = 12
+      const rowHeight = 10
+      const cellPadding = 3
+      
+      // Table header background
+      pdf.setFillColor(colors.background.light[0], colors.background.light[1], colors.background.light[2])
+      pdf.rect(layout.margin, yPosition, layout.contentWidth, headerHeight, "F")
+      
+      // Header border
+      pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2])
+      pdf.setLineWidth(0.5)
+      pdf.rect(layout.margin, yPosition, layout.contentWidth, headerHeight)
+      
+      // Header text
       pdf.setFont("helvetica", "bold")
       pdf.setFontSize(10)
-      pdf.setTextColor(0, 0, 0)
-
+      pdf.setTextColor(colors.text.primary[0], colors.text.primary[1], colors.text.primary[2])
+      
       headers.forEach((header, index) => {
-        const x = margin + index * colWidth + cellPadding
-        const wrappedHeader = pdf.splitTextToSize(header, colWidth - cellPadding * 2)
-        pdf.text(wrappedHeader, x, yPosition)
-      })
-      yPosition += minRowHeight
-
-      // Draw table rows
-      pdf.setFont("helvetica", "normal")
-      data.forEach((row, rowIndex) => {
-        // Calculate the height needed for this row
-        let maxCellHeight = minRowHeight
-        const cellContents: string[][] = []
-
-        headers.forEach((header, colIndex) => {
-          const cellText = row[header] || ""
-          const wrappedText = pdf.splitTextToSize(cellText, colWidth - cellPadding * 2)
-          cellContents[colIndex] = wrappedText
-          const cellHeight = Math.max(minRowHeight, wrappedText.length * 4 + cellPadding)
-          maxCellHeight = Math.max(maxCellHeight, cellHeight)
-        })
-
-        checkPageBreak(maxCellHeight)
-
-        // Draw row background
-        if (rowIndex % 2 === 0) {
-          pdf.setFillColor(250, 250, 250)
-          pdf.rect(margin, yPosition - 5, pageWidth, maxCellHeight, "F")
+        const x = layout.margin + index * colWidth + cellPadding
+        pdf.text(header, x, yPosition + 8)
+        
+        // Vertical separators
+        if (index > 0) {
+          pdf.line(
+            layout.margin + index * colWidth, 
+            yPosition, 
+            layout.margin + index * colWidth, 
+            yPosition + headerHeight
+          )
         }
-
-        // Draw cell borders
-        pdf.setDrawColor(200, 200, 200)
-        pdf.setLineWidth(0.1)
-
+      })
+      
+      yPosition += headerHeight
+      
+      // Table rows
+      pdf.setFont("helvetica", "normal")
+      pdf.setFontSize(9)
+      
+      data.forEach((row, rowIndex) => {
+        checkPageBreak(rowHeight)
+        
+        // Alternating row colors
+        if (rowIndex % 2 === 0) {
+          pdf.setFillColor(252, 252, 252)
+          pdf.rect(layout.margin, yPosition, layout.contentWidth, rowHeight, "F")
+        }
+        
+        // Row border
+        pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2])
+        pdf.rect(layout.margin, yPosition, layout.contentWidth, rowHeight)
+        
         headers.forEach((header, colIndex) => {
-          const x = margin + colIndex * colWidth
-
-          // Draw vertical cell border
-          pdf.line(x, yPosition - 5, x, yPosition - 5 + maxCellHeight)
-
-          // Draw cell content
-          const cellText = row[header] || ""
-          const textX = x + cellPadding
-          const textY = yPosition
-
-          // Handle special formatting for status and priority columns
+          const cellValue = row[header] || ""
+          const x = layout.margin + colIndex * colWidth + cellPadding
+          
+          // Color coding for status/priority
           if (header.toLowerCase().includes("status") || header.toLowerCase().includes("priority")) {
-            pdf.setFont("helvetica", "bold")
-            if (cellText.toLowerCase().includes("high")) {
+            if (cellValue.toLowerCase().includes("high") || cellValue.toLowerCase().includes("critical")) {
               pdf.setTextColor(220, 38, 38) // Red
-            } else if (cellText.toLowerCase().includes("medium")) {
+            } else if (cellValue.toLowerCase().includes("medium")) {
               pdf.setTextColor(245, 158, 11) // Orange
-            } else if (cellText.toLowerCase().includes("complete")) {
-              pdf.setTextColor(34, 197, 94) // Green
+            } else if (cellValue.toLowerCase().includes("complete") || cellValue.toLowerCase().includes("done")) {
+              pdf.setTextColor(colors.accent[0], colors.accent[1], colors.accent[2]) // Green
             } else {
-              pdf.setTextColor(107, 114, 128) // Gray
+              pdf.setTextColor(colors.text.muted[0], colors.text.muted[1], colors.text.muted[2])
             }
           } else {
-            pdf.setFont("helvetica", "normal")
-            pdf.setTextColor(0, 0, 0)
+            pdf.setTextColor(colors.text.secondary[0], colors.text.secondary[1], colors.text.secondary[2])
           }
-
-          // Add wrapped text with proper vertical alignment
-          const wrappedText = cellContents[colIndex]
-          wrappedText.forEach((line, lineIndex) => {
-            pdf.text(line, textX, textY + lineIndex * 4)
-          })
+          
+          const wrappedText = pdf.splitTextToSize(cellValue, colWidth - cellPadding * 2)
+          pdf.text(wrappedText[0] || "", x, yPosition + 7) // Only first line to fit
+          
+          // Vertical separators
+          if (colIndex > 0) {
+            pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2])
+            pdf.line(
+              layout.margin + colIndex * colWidth, 
+              yPosition, 
+              layout.margin + colIndex * colWidth, 
+              yPosition + rowHeight
+            )
+          }
         })
-
-        // Draw right border for last column
-        pdf.line(margin + pageWidth, yPosition - 5, margin + pageWidth, yPosition - 5 + maxCellHeight)
-
-        // Draw horizontal border for this row
-        pdf.line(margin, yPosition - 5 + maxCellHeight, margin + pageWidth, yPosition - 5 + maxCellHeight)
-
-        yPosition += maxCellHeight
+        
+        yPosition += rowHeight
       })
-
-      // Draw top border of the table (after headers)
-      pdf.line(
-        margin,
-        yPosition - data.length * minRowHeight - minRowHeight - 5,
-        margin + pageWidth,
-        yPosition - data.length * minRowHeight - minRowHeight - 5,
-      )
-
-      yPosition += 10 // Add space after table
+      
+      yPosition += layout.sectionSpacing
     }
+
+    // Add document header
+    pdf.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2])
+    pdf.rect(0, 0, layout.pageWidth, 15, "F")
+    
+    pdf.setFont("helvetica", "bold")
+    pdf.setFontSize(16)
+    pdf.setTextColor(255, 255, 255)
+    pdf.text("RoadmapBP", layout.pageWidth / 2, 10, { align: "center" })
+    
+    yPosition = 25
+
+    // Add date
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+    addText(`Generated on ${currentDate}`, typography.small, colors.text.muted, 0, 'right')
+    yPosition += 10
 
     // Process the roadmap content
     const lines = roadmap.split("\n")
     let i = 0
-    let listItems: string[] = []
 
-    // Skip the initial title and introduction
+    // Skip initial content
     while (i < lines.length) {
       const line = lines[i].trim()
       if (line === "Project Roadmap" || line.startsWith("Certainly!") || line.startsWith("---")) {
@@ -165,145 +323,96 @@ export const generatePDF = async (roadmap: string) => {
       break
     }
 
-    const flushListItems = () => {
-      if (listItems.length > 0) {
-        listItems.forEach((item) => {
-          addText(`• ${item}`, 11, "normal", [0, 0, 0], 5)
-        })
-        listItems = []
-        yPosition += 3
-      }
-    }
-
     while (i < lines.length) {
       const line = lines[i].trim()
 
       if (!line) {
-        flushListItems()
-        yPosition += 3
+        yPosition += layout.paragraphSpacing / 2
         i++
         continue
       }
 
-      // Check for tables
-      if (
-        line.toLowerCase().includes("milestone") &&
-        (line.includes("|") || lines[i + 1]?.includes("|") || lines[i + 2]?.includes("|"))
-      ) {
-        flushListItems()
-        const { data, headers, endIndex } = parseTableData(roadmap, i)
-        if (data.length > 0 && headers.length > 0) {
-          addTable(headers, data, "Project Milestones")
+      // Handle Executive Summary
+      if (line.toLowerCase() === "executive summary") {
+        if (!isFirstPhase) {
+          pdf.addPage();
+          yPosition = layout.margin;
         }
-        i = endIndex
-        continue
-      }
-
-      if (
-        line.toLowerCase().includes("risk") &&
-        (line.includes("|") || lines[i + 1]?.includes("|") || lines[i + 2]?.includes("|"))
-      ) {
-        flushListItems()
-        const { data, headers, endIndex } = parseTableData(roadmap, i)
-        if (data.length > 0 && headers.length > 0) {
-          addTable(headers, data, "Risk Assessment")
+        isFirstPhase = false;
+        i++
+        if (i < lines.length) {
+          addExecutiveSummary(lines[i].trim())
+          i++
         }
-        i = endIndex
         continue
       }
 
-      // Handle headings
-      const headingMatch = line.match(/^(#{1,3})\s+(.+)/)
-      if (headingMatch) {
-        flushListItems()
-        const level = headingMatch[1].length
-        const text = headingMatch[2]
-
-        if (level === 1) {
-          yPosition += 5
-          addText(text, 20, "bold", [0, 100, 200])
-          yPosition += 3
-        } else if (level === 2) {
-          yPosition += 4
-          addText(text, 16, "bold", [0, 0, 0])
-          yPosition += 2
-        } else {
-          yPosition += 3
-          addText(text, 14, "bold", [0, 0, 0])
-          yPosition += 2
-        }
+      // Handle Phase Headers
+      if (line.toLowerCase().startsWith("phase")) {
+        addSectionHeader(line, 1)
         i++
         continue
       }
 
-      // Handle bold text
-      if (line.match(/^\*\*.*\*\*:?$/) || line.match(/^[A-Z][^:]*:$/)) {
-        flushListItems()
-        const text = line.replace(/\*\*/g, "").replace(/:$/, "")
-        addText(text, 12, "bold", [0, 100, 200])
-        yPosition += 2
+      // Handle subsection headers
+      if (line.endsWith(":") && !line.startsWith("•") && !line.startsWith("-")) {
+        addSectionHeader(line.replace(":", ""), 2)
         i++
         continue
       }
 
-      // Handle list items
-      if (line.match(/^[-*•]\s+/) || line.match(/^\d+\.\s+/)) {
-        const text = line.replace(/^[-*•]\s+/, "").replace(/^\d+\.\s+/, "")
-        listItems.push(text)
+      // Handle Key Metrics
+      if (line.toLowerCase().includes("key metrics")) {
+        addSectionHeader(line, 2)
         i++
         continue
       }
 
-      // Handle phase indicators
-      if (line.match(/^(Phase|Step|Stage)\s+\d+/i)) {
-        flushListItems()
-        checkPageBreak(15)
-
-        // Add colored background for phases
-        pdf.setFillColor(240, 248, 255)
-        pdf.rect(margin, yPosition - 3, pageWidth, 12, "F")
-
-        // Add left border
-        pdf.setFillColor(0, 100, 200)
-        pdf.rect(margin, yPosition - 3, 3, 12, "F")
-
-        addText(line, 12, "bold", [0, 100, 200], 8)
-        yPosition += 5
-        i++
-        continue
-      }
-
-      // Handle timeline indicators
-      if (line.match(/\b\d+\s*(weeks?|months?|days?)\b/i)) {
-        addText(`⏱ ${line}`, 10, "normal", [107, 114, 128])
+      // Handle bullet points
+      if (line.startsWith("•") || line.startsWith("-") || line.match(/^\d+\./)) {
+        const bulletText = line.replace(/^[•-]\s*/, "").replace(/^\d+\.\s*/, "")
+        addBulletPoint(bulletText)
         i++
         continue
       }
 
       // Regular paragraphs
-      if (line.length > 0 && listItems.length === 0) {
-        addText(line, 11, "normal", [60, 60, 60])
-        yPosition += 2
+      if (line.length > 0) {
+        addText(line, typography.body, colors.text.secondary)
+        yPosition += layout.paragraphSpacing / 2
       }
 
       i++
     }
 
-    // Flush any remaining list items
-    flushListItems()
-
-    // Add page numbers
+    // Add footer to all pages
     const pageCount = pdf.getNumberOfPages()
-    for (let i = 1; i <= pageCount; i++) {
-      pdf.setPage(i)
+    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+      pdf.setPage(pageNum)
+      
+      // Footer line
+      pdf.setDrawColor(colors.border[0], colors.border[1], colors.border[2])
+      pdf.setLineWidth(0.3)
+      pdf.line(layout.margin, layout.pageHeight - 15, layout.margin + layout.contentWidth, layout.pageHeight - 15)
+      
+      // Page number
       pdf.setFont("helvetica", "normal")
-      pdf.setFontSize(10)
-      pdf.setTextColor(128, 128, 128)
-      pdf.text(`Page ${i} of ${pageCount}`, pageWidth - 10, pageHeight - 10, { align: "right" })
+      pdf.setFontSize(8)
+      pdf.setTextColor(colors.text.muted[0], colors.text.muted[1], colors.text.muted[2])
+      pdf.text(
+        `Page ${pageNum} of ${pageCount}`, 
+        layout.pageWidth - layout.margin, 
+        layout.pageHeight - 8, 
+        { align: "right" }
+      )
+      
+      // Document title in footer
+      pdf.text("Project Roadmap", layout.margin, layout.pageHeight - 8)
     }
 
     pdf.save("project-roadmap.pdf")
   } catch (error) {
     console.error("Error generating PDF:", error)
+    throw new Error("Failed to generate PDF")
   }
-} 
+}
