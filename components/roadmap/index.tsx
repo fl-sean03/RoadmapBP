@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Target, Download, Copy, ChevronDown, Check } from "lucide-react"
+import { Target, Download, Copy, ChevronDown, Check, ThumbsUp, ThumbsDown, Send } from "lucide-react"
 import { useState, useRef } from "react"
 import { RoadmapDisplayProps, FormattedContentItem } from "./types"
 import { formatRoadmapContent } from "./content-formatter"
@@ -22,6 +22,8 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
   const [isPhaseDownloading, setIsPhaseDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [phaseCopied, setPhaseCopied] = useState(false)
+  const [feedbackEmail, setFeedbackEmail] = useState("")
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
   const { theme } = useTheme()
   const [selectedPhase, setSelectedPhase] = useState<number>(1)
@@ -149,6 +151,21 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
         content: `Phase ${phases.length + 1}`,
         className: "text-2xl font-bold text-blue-600 mb-6"
       }]);
+  }
+
+  const handleFeedback = (isPositive: boolean) => {
+    // Here you can add logic to handle the feedback
+    console.log(`User gave ${isPositive ? 'positive' : 'negative'} feedback`)
+    handleFeedbackSubmit()
+  }
+
+  const handleFeedbackSubmit = () => {
+    // Here you can add logic to submit the feedback with email
+    console.log('Feedback submitted with email:', feedbackEmail)
+    setFeedbackSubmitted(true)
+    setFeedbackEmail("")
+    // Reset after 3 seconds
+    setTimeout(() => setFeedbackSubmitted(false), 3000)
   }
 
   if (isGenerating) {
@@ -460,6 +477,66 @@ export const RoadmapDisplay = ({ roadmap, isGenerating }: RoadmapDisplayProps) =
               No content available for this phase
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Feedback Section */}
+      <Card className="mt-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center space-y-4">
+            
+
+            <p className="text-sm text-muted-foreground">Was this roadmap helpful?</p>
+            
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleFeedback(true)}
+                className={`transition-all hover:text-green-600 hover:border-green-600`}
+              >
+                <ThumbsUp className="h-4 w-4 mr-1" />
+                Yes
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleFeedback(false)}
+                className={`transition-all hover:text-red-600 hover:border-red-600`}
+              >
+                <ThumbsDown className="h-4 w-4 mr-1" />
+                No
+              </Button>
+            </div>
+
+            <div className="w-full max-w-md space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Your email (optional)"
+                  value={feedbackEmail}
+                  onChange={(e) => setFeedbackEmail(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleFeedbackSubmit}
+                  className="transition-all hover:text-blue-600 hover:border-blue-600"
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  Send
+                </Button>
+              </div>
+            </div>
+
+            {feedbackSubmitted && (
+              <p className="text-sm text-green-600 animate-fade-in">
+                Thank you for your feedback!
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
