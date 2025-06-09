@@ -38,15 +38,28 @@ export async function generatePhases(expandedBrief: string): Promise<{ phases: a
 }
 
 // Step 3: Generate markdown for each phase
-export async function generatePhaseMarkdown(phase: any, expandedBrief: string): Promise<{ markdown: string }> {
+export async function generatePhaseMarkdown(phase: any, expandedBrief: string): Promise<{ markdown: string, executiveSummary: string }> {
   console.log("[generatePhaseMarkdown] Input:", { phase, expandedBrief })
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
     system: `You are an expert project manager. Generate markdown content for this phase of a project. Use the expanded project brief as additional context.\n\nYour output MUST follow this exact format and structure for each phase:\n\n## Phase [Number]: [Phase Title]\n\n### Executive Summary\n\n[2-6 sentences summarizing the focus, goals, and approach for this phase.]\n\n### Timeline\n\nThis phase will run for [duration], from **[Start Date] to [End Date]**.\n\n* **Start Date**: [Start Date]\n* **End Date**: [End Date]\n\n---\n\n### Objectives\n\nThis phase will achieve the following:\n\n* [Objective 1]\n* [Objective 2]\n* [Objective 3]\n* [Objective 4]\n\n---\n\n### Tasks\n\n#### 1. [Task Title]\n\n[Task description]\n\n* [Subtask or detail]\n* [Subtask or detail]\n* [Subtask or detail]\n\n#### 2. [Task Title]\n\n[Task description]\n\n* [Subtask or detail]\n* [Subtask or detail]\n\n[Repeat for all tasks]\n\n---\n\n### Success Metrics\n\nSuccess for this phase will be evaluated using both qualitative and quantitative benchmarks:\n\n* [Metric 1]\n* [Metric 2]\n* [Metric 3]\n* [Metric 4]\n\n---\n\n### Strategic Considerations\n\n* [Consideration 1]\n* [Consideration 2]\n* [Consideration 3]\n\n---\n\n### Next Steps\n\n[Describe what will happen after this phase concludes, including handoffs, follow-ups, or preparations for the next phase.]\n\n---\n\nStrictly follow this structure, use markdown headers and bullet points as shown, and be as detailed and actionable as possible, leveraging both the phase JSON and the expanded brief.\n\nIMPORTANT: Do NOT limit the number of objectives, tasks, success metrics, or strategic considerations. For larger or more complex projects, include as many items in each section as are necessary to fully capture the scope and detail of the phase. Expand each section as needed based on the project's complexity.`,
     prompt: JSON.stringify({ expandedBrief, phase }),
   })
-  console.log("[generatePhaseMarkdown] Output:", response.text)
-  return { markdown: response.text }
+  const markdown = response.text;
+  // Extract executive summary from markdown
+  let executiveSummary = "";
+  const execMatch = markdown.match(/### Executive Summary\s*([\s\S]*?)\n###/);
+  if (execMatch && execMatch[1]) {
+    executiveSummary = execMatch[1].trim();
+  } else {
+    // fallback: try to get everything after Executive Summary header
+    const execAlt = markdown.split("### Executive Summary")[1];
+    if (execAlt) {
+      executiveSummary = execAlt.split("###")[0].trim();
+    }
+  }
+  console.log("[generatePhaseMarkdown] Output:", { markdown, executiveSummary });
+  return { markdown, executiveSummary };
 }
 
 // Orchestrator: Full roadmap generation
@@ -54,19 +67,22 @@ export async function generateFullRoadmap(minimalInput: string): Promise<{
   expandedBrief: string,
   phases: any[],
   markdowns: string[],
+  executiveSummaries: string[],
 }> {
   try {
     console.log("[generateFullRoadmap] Starting full roadmap generation")
     const { expandedBrief } = await expandBrief(minimalInput)
     const { phases } = await generatePhases(expandedBrief)
     const markdowns: string[] = []
+    const executiveSummaries: string[] = []
     for (let idx = 0; idx < phases.length; idx++) {
       console.log(`[generateFullRoadmap] Generating markdown for phase ${idx + 1}`)
-      const { markdown } = await generatePhaseMarkdown(phases[idx], expandedBrief)
+      const { markdown, executiveSummary } = await generatePhaseMarkdown(phases[idx], expandedBrief)
       markdowns.push(markdown)
+      executiveSummaries.push(executiveSummary)
     }
     console.log("[generateFullRoadmap] Done. Returning result.")
-    return { expandedBrief, phases, markdowns }
+    return { expandedBrief, phases, markdowns, executiveSummaries }
   } catch (error) {
     console.error("[generateFullRoadmap] Error:", error)
     throw error

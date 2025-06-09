@@ -27,8 +27,11 @@ export interface RoadmapDisplayProps {
     expandedBrief: string
     phases: RoadmapPhase[]
     markdowns: string[]
+    executiveSummaries: string[]
   }
   isGenerating: boolean
+  steps?: string[]
+  currentStep?: number
 }
 
 export interface TableData {

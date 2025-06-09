@@ -16,6 +16,7 @@ export default function Home() {
     expandedBrief: string
     phases: any[]
     markdowns: string[]
+    executiveSummaries: string[]
   } | undefined>(undefined)
   const [isGenerating, setIsGenerating] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -57,11 +58,13 @@ export default function Home() {
       // Step 4: Formatting Output (generate markdowns)
       setCurrentStep(3)
       const markdowns: string[] = []
+      const executiveSummaries: string[] = []
       for (let idx = 0; idx < phases.length; idx++) {
-        const { markdown } = await generatePhaseMarkdown(phases[idx], expandedBrief)
+        const { markdown, executiveSummary } = await generatePhaseMarkdown(phases[idx], expandedBrief)
         markdowns.push(markdown)
+        executiveSummaries.push(executiveSummary)
       }
-      setRoadmap({ expandedBrief, phases, markdowns })
+      setRoadmap({ expandedBrief, phases, markdowns, executiveSummaries })
     } catch (error) {
       console.error("Error generating roadmap:", error)
     } finally {
@@ -85,11 +88,13 @@ export default function Home() {
       // Step 4: Formatting Output (generate markdowns)
       setCurrentStep(3)
       const markdowns: string[] = []
+      const executiveSummaries: string[] = []
       for (let idx = 0; idx < phases.length; idx++) {
-        const { markdown } = await generatePhaseMarkdown(phases[idx], expandedBrief)
+        const { markdown, executiveSummary } = await generatePhaseMarkdown(phases[idx], expandedBrief)
         markdowns.push(markdown)
+        executiveSummaries.push(executiveSummary)
       }
-      setRoadmap({ expandedBrief, phases, markdowns })
+      setRoadmap({ expandedBrief, phases, markdowns, executiveSummaries })
     } catch (error) {
       console.error("Error generating roadmap:", error)
     } finally {
