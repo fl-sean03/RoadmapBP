@@ -1,0 +1,252 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Got it! I'll revise the document to ensure that the LLM takes a concise input from the user and fully expands it into a comprehensive, actionable project brief. I'll place more emphasis on how the LLM should process minimal inputs to generate detailed, thorough content and clearly explain how that ties into the overall process. Here's the revised version:
+
+---
+
+## **Executive Document: RoadmapBP Workflow & LLM Integration**
+
+---
+
+## **1. Overview**
+
+### **1.1 Project Overview**
+
+RoadmapBP is an AI-powered tool designed to transform minimal, unstructured project briefs into comprehensive strategic roadmaps, split into three distinct phases. These roadmaps are user-ready, professionally formatted documents that can be downloaded in PDF format.
+
+The primary goal of RoadmapBP is to help early-stage tech founders, consultants, and strategy professionals quickly generate structured roadmaps from even the most concise or vague project descriptions. By leveraging an advanced language model (LLM), the tool automatically generates detailed, actionable roadmaps that outline tasks, timelines, and key performance metrics.
+
+### **1.2 Objective**
+
+The objective of this document is to describe the workflow and technical integration required to transform a simple project brief into an actionable roadmap. Specifically, this document will break down the steps in which the LLM is called to:
+
+* Expand minimal user inputs into comprehensive project briefs
+* Generate structured outputs (JSON) of 3 phases with detailed tasks and objectives
+* Convert the structured roadmap data into formatted markdown for each phase, ready for PDF conversion and download
+
+This workflow ensures that the output is always professional, clear, and actionable, even if the user's input is minimal.
+
+---
+
+## **2. Workflow Breakdown**
+
+### **2.1 Step 1: User Input + Provided File with Context (Optional)**
+
+#### **Description**
+
+* The user provides a project brief as input. This can be either text (e.g., a few lines describing the project) or a file upload (e.g., Word, PDF).
+* If a file is provided, the system will extract its text content. The goal is to process even the most basic input, such as a few sentences or keywords describing the project, which may initially lack detail.
+
+#### **Action Points**
+
+* **File Input Handling**: If a file is uploaded, extract the text using file parsers.
+* **Text Input Handling**: The system should be capable of accepting short text inputs, and it should not assume detailed context is provided.
+
+---
+
+### **2.2 Step 2: LLM Call to Generate Extended Project Brief**
+
+#### **Description**
+
+* The core functionality of this step is expanding the brief. For example, if the user only provides a brief project title or one sentence, the LLM should generate a fully fleshed-out project brief with details about the project scope, objectives, stakeholders, and any specific considerations.
+
+* The LLM should convert a high-level, vague input into a rich, actionable brief, covering key project areas like goals, potential phases, and challenges. It should also add insights like potential risks, strategic considerations, and detailed objectives for each phase.
+
+#### **LLM Prompt Example**:
+
+```text
+"Expand on the following brief and generate a comprehensive project description. The output should include a detailed project overview, key objectives, high-level goals, potential challenges, and initial thoughts on how to break the project into phases. This should be tailored to a strategic, actionable roadmap."
+```
+
+#### **Suggestions for Making the Prompt More Comprehensive**:
+
+* Request specific details about each phase of the project (e.g., start and end dates, milestones, tasks).
+* Ask the LLM to provide insights into what the first steps of the project should be, including initial research, product scope definition, and stakeholder engagement.
+
+#### **Example AI Output**:
+
+```json
+{
+    "expanded_brief": "The project involves building a SaaS product for the timber industry. Key objectives include increasing operational efficiency, digitizing timber tracking, and providing real-time analytics. Initial research and market validation will be critical, followed by product definition and development in later phases. Risk areas include data privacy regulations and integration with existing timber industry systems."
+}
+```
+
+#### **Action Points**:
+
+* Ensure that the system is capable of sending minimal input (e.g., one sentence) and receiving a detailed, strategic project brief.
+* Design logic to refine the expanded brief, ensuring it provides a clear, actionable foundation for the next steps.
+
+---
+
+### **2.3 Step 3: LLM Call to Generate Structured Output (JSON) with 3 Phases**
+
+#### **Description**
+
+* The expanded project brief is then sent to the LLM to generate a structured JSON output. The LLM breaks the project into three phases, each with specific tasks, start/end dates, success metrics, and next steps.
+
+* The JSON output should be detailed, ensuring that each phase has clear objectives, deliverables, and a timeline. The system will rely on this structured output to create final markdown documents for each phase.
+
+#### **LLM Prompt Example**:
+
+```text
+"Based on the expanded project brief, create a structured roadmap that divides the project into three clear phases. For each phase, include:
+  - Phase Title
+  - Start and End Dates
+  - List of Tasks with Descriptions
+  - Suggested Success Metrics
+  - Next Steps
+The phases should build on each other and account for dependencies."
+```
+
+#### **Suggestions for Making the Prompt More Comprehensive**:
+
+* Ask for a suggested timeline and include potential bottlenecks or dependencies between tasks.
+* Request the LLM to include any external or internal factors that could influence the timeline or success metrics (e.g., market conditions, regulatory issues).
+
+#### **Example JSON Output**:
+
+```json
+{
+    "phases": [
+        {
+            "title": "Phase 1: Market Research & Product Definition",
+            "startDate": "2025-06-01",
+            "endDate": "2025-06-15",
+            "tasks": [
+                { "title": "Conduct market research", "description": "Survey timber industry stakeholders to understand pain points." },
+                { "title": "Define product scope", "description": "Outline core features and initial product offering." }
+            ],
+            "metrics": ["Market research reports", "Scope document sign-off"],
+            "nextSteps": "Begin development of product prototype."
+        },
+        {
+            "title": "Phase 2: Product Development & Testing",
+            "startDate": "2025-06-16",
+            "endDate": "2025-07-30",
+            "tasks": [
+                { "title": "Develop product prototype", "description": "Build the first version of the SaaS product." },
+                { "title": "Test with initial users", "description": "Conduct user testing and feedback sessions." }
+            ],
+            "metrics": ["Prototype delivery", "User satisfaction survey results"],
+            "nextSteps": "Prepare for full-scale launch."
+        },
+        {
+            "title": "Phase 3: Launch & Scaling",
+            "startDate": "2025-08-01",
+            "endDate": "2025-09-15",
+            "tasks": [
+                { "title": "Launch product", "description": "Go live with the SaaS product for the timber industry." },
+                { "title": "Scale operations", "description": "Increase user base and scale product infrastructure." }
+            ],
+            "metrics": ["Product adoption rate", "Operational efficiency metrics"],
+            "nextSteps": "Monitor performance and collect feedback for future improvements."
+        }
+    ]
+}
+```
+
+#### **Action Points**:
+
+* Ensure the backend logic can accurately handle complex JSON output and format it into usable data for generating the final documents.
+* Handle potential edge cases where the LLM might generate incomplete or unclear phase descriptions.
+
+---
+
+### **2.4 Step 4: Loop Through Each Phase and Generate Full Markdown for Each Phase**
+
+#### **Description**
+
+* Each phase from the structured JSON is converted into detailed markdown, which is used for rendering on the frontend and for generating downloadable PDFs.
+
+* The markdown should be consistent and clearly formatted, including:
+
+  * Executive Summary
+  * Tasks with Descriptions
+  * Timeline (Start/End Dates)
+  * Metrics for Success
+  * Next Steps
+
+#### **LLM Call for Markdown Generation**:
+
+```text
+"Generate markdown content for this phase. The markdown should include the following sections:
+    - Executive Summary
+    - Timeline (start and end dates)
+    - Tasks (list of tasks with descriptions)
+    - Metrics (list of success metrics)
+    - Next Steps (actions for the subsequent phase)"
+```
+
+#### **Suggestions for Making the Prompt More Comprehensive**:
+
+* Request that each markdown document follows the same structure for consistency across all phases.
+* Specify markdown formatting (e.g., headers, bullet points, tables) for a polished, professional output.
+
+#### **Example Markdown Output**:
+
+```markdown
+## Phase 1: Market Research & Product Definition
+
+### Executive Summary
+In this phase, the focus is on conducting in-depth market research and defining the initial product scope.
+
+### Timeline
+- **Start Date**: June 1, 2025
+- **End Date**: June 15, 2025
+
+### Tasks
+- **Conduct market research**: Survey timber industry stakeholders to understand their pain points.
+- **Define product scope**: Outline the features and capabilities for the product’s first version.
+
+### Metrics
+- Market research report completion
+- Product scope sign-off document
+
+### Next Steps
+Begin development of the product prototype.
+```
+
+---
+
+## **3. Example Flow through the Workflow**
+
+### **Step 1: User Input**
+
+1. **User Action**: User inputs a concise project brief (e.g., "SaaS for timber industry").
+2. **System Action**: The system processes the input, either as text or extracted from a file.
+
+### **Step 2: LLM Call to Generate Extended Project Brief**
+
+1. **System Action**: The LLM is called to expand the minimal input into a comprehensive project description.
+2. **LLM Output**: A detailed project brief is returned, including goals, objectives, and initial suggestions.
+
+### **Step 3: LLM Call to Generate Structured JSON**
+
+1. **System Action**: The expanded project brief is sent to the LLM to generate a structured roadmap with three phases.
+2. **LLM Output**: JSON with detailed phases, tasks, metrics, and timelines is returned.
+
+### **Step 4: Generate Markdown for Each Phase**
+
+1. **System Action**: Each phase is converted into markdown and displayed on the frontend.
+2. **System Action**: Markdown is also prepared for PDF generation and download.
+
+---
+
+## **4. Conclusion**
+
+This document provides an in-depth understanding of the workflow, ensuring that even the most minimal input can be expanded into a fully actionable and professional roadmap. By leveraging the power of the LLM, RoadmapBP offers a seamless, user-friendly way to generate strategic roadmaps from sparse, initial inputs.
+
+---
+
+### **Next Steps:**
+
+* Development teams can now proceed with implementing each part of this workflow.
+* The focus should be on integrating the LLM effectively and ensuring the quality of output through continuous testing and feedback.
+
+---
+
+This revised document provides clear instructions on handling minimal input, emphasizing the LLM’s role in expanding vague inputs into detailed, actionable content. Let me know if you’d like to make further adjustments!
+

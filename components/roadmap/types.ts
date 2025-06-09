@@ -1,6 +1,32 @@
+export interface TableItem {
+  type: "milestone-table" | "risk-table"
+  headers: string[]
+  data: string[][]
+  className?: string
+}
+
+export interface TextItem {
+  type: "text"
+  content: string
+  className?: string
+}
+
+export type FormattedContentItem = TextItem | TableItem
+
+export interface RoadmapPhase {
+  title: string
+  startDate: string
+  endDate: string
+  tasks: { title: string; description: string }[]
+  metrics: string[]
+  nextSteps: string
+}
+
 export interface RoadmapDisplayProps {
   roadmap?: {
-    roadmap: string
+    expandedBrief: string
+    phases: RoadmapPhase[]
+    markdowns: string[]
   }
   isGenerating: boolean
 }
@@ -13,12 +39,4 @@ export interface TableParseResult {
   data: TableData[]
   headers: string[]
   endIndex: number
-}
-
-export interface FormattedContentItem {
-  type: "text" | "milestone-table" | "risk-table"
-  content?: string
-  className?: string
-  data?: TableData[]
-  headers?: string[]
 } 

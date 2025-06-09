@@ -118,3 +118,13 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Make prose bullet points darker */
+.prose ul > li::marker,
+.prose ol > li::marker {
+  color: #1e293b; /* slate-800 for light mode */
+}
+.dark .prose ul > li::marker,
+.dark .prose ol > li::marker {
+  color: #e5e7eb; /* slate-200 for dark mode */
+}
