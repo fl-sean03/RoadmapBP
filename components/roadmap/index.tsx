@@ -20,6 +20,7 @@ import { EmptyState } from "./empty-state"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { AnimatePresence, motion } from "framer-motion"
+import { Feedback } from "./feedback"
 
 export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: RoadmapDisplayProps & { steps?: string[]; currentStep?: number }) => {
   const [openPhases, setOpenPhases] = useState<number[]>([0])
@@ -209,6 +210,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
           )
         })}
       </div>
+      <Feedback />
     </div>
   )
 } 
