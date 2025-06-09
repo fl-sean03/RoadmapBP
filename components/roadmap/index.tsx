@@ -132,6 +132,10 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
       <div className="flex flex-col gap-4 w-full">
         {roadmap.markdowns.map((md, idx) => {
           const isOpen = openPhases.includes(idx)
+          let filteredMd = md;
+          if (roadmap.executiveSummaries && roadmap.executiveSummaries[idx]) {
+            filteredMd = md.replace(/### Executive Summary[\s\S]*?(?=### )/, "");
+          }
           return (
             <Card key={idx} className="w-full" ref={el => { cardRefs.current[idx] = el || null; }}>
               <CardHeader
@@ -159,13 +163,13 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
                   >
                     <CardContent>
                       {roadmap.executiveSummaries && roadmap.executiveSummaries[idx] && (
-                        <div className="mb-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 dark:border-blue-400 text-blue-900 dark:text-blue-100 font-medium text-base lg:text-lg shadow-sm">
-                          <div className="font-semibold mb-1 text-blue-700 dark:text-blue-200">Executive Summary</div>
-                          <div>{roadmap.executiveSummaries[idx]}</div>
+                        <div className="mb-4 lg:p-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 dark:border-blue-400 text-blue-900 dark:text-blue-100 shadow-sm">
+                          <div className="font-semibold mb-1 text-blue-700 dark:text-blue-200 lg:text-lg text-base">Executive Summary</div>
+                          <div className="font-normal text-sm lg:text-base">{roadmap.executiveSummaries[idx]}</div>
                         </div>
                       )}
                       <div className="prose prose-base lg:prose-lg max-w-none dark:prose-invert mb-4 prose-p:my-2 prose-li:my-1">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{md}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{filteredMd}</ReactMarkdown>
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => copyToClipboard(md)}>
