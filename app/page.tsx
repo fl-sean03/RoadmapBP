@@ -1,22 +1,34 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Sparkles, Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
-import { generateRoadmap } from "./actions"
+import { generateFullRoadmap, expandBrief, generatePhases, generatePhaseMarkdown } from "./actions"
 import { RoadmapDisplay } from "@/components/roadmap-display"
-import React from "react"
 import { InputSection } from "@/components/input-section"
+import { Button } from "@/components/ui/button"
+import { Moon, Sun } from "lucide-react"
+import { useTheme } from "next-themes"
+import React from "react"
+import Image from "next/image"
 
 export default function Home() {
   const [projectBrief, setProjectBrief] = useState("")
   const [roadmap, setRoadmap] = useState<{
-    roadmap: string
+    expandedBrief: string
+    phases: any[]
+    markdowns: string[]
   } | undefined>(undefined)
   const [isGenerating, setIsGenerating] = useState(false)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
+
+  // Step progress for loading state
+  const steps = [
+    'Thinking',
+    'Expanding Brief',
+    'Generating Phases',
+    'Formatting Output'
+  ];
+  const [currentStep, setCurrentStep] = useState(0); // 0-based index
 
   // Ensure component is mounted before showing theme toggle
   React.useEffect(() => {
@@ -31,9 +43,25 @@ export default function Home() {
     if (!projectBrief.trim()) return
 
     setIsGenerating(true)
+    setCurrentStep(0)
     try {
-      const result = await generateRoadmap(projectBrief)
-      setRoadmap(result)
+      // Step 1: Thinking (simulate)
+      setCurrentStep(0)
+      await new Promise(res => setTimeout(res, 500))
+      // Step 2: Expanding Brief
+      setCurrentStep(1)
+      const { expandedBrief } = await expandBrief(projectBrief)
+      // Step 3: Generating Phases
+      setCurrentStep(2)
+      const { phases } = await generatePhases(expandedBrief)
+      // Step 4: Formatting Output (generate markdowns)
+      setCurrentStep(3)
+      const markdowns: string[] = []
+      for (let idx = 0; idx < phases.length; idx++) {
+        const { markdown } = await generatePhaseMarkdown(phases[idx], expandedBrief)
+        markdowns.push(markdown)
+      }
+      setRoadmap({ expandedBrief, phases, markdowns })
     } catch (error) {
       console.error("Error generating roadmap:", error)
     } finally {
@@ -43,9 +71,25 @@ export default function Home() {
 
   const handleFileContent = async (content: string) => {
     setIsGenerating(true)
+    setCurrentStep(0)
     try {
-      const result = await generateRoadmap(content)
-      setRoadmap(result)
+      // Step 1: Thinking (simulate)
+      setCurrentStep(0)
+      await new Promise(res => setTimeout(res, 500))
+      // Step 2: Expanding Brief
+      setCurrentStep(1)
+      const { expandedBrief } = await expandBrief(content)
+      // Step 3: Generating Phases
+      setCurrentStep(2)
+      const { phases } = await generatePhases(expandedBrief)
+      // Step 4: Formatting Output (generate markdowns)
+      setCurrentStep(3)
+      const markdowns: string[] = []
+      for (let idx = 0; idx < phases.length; idx++) {
+        const { markdown } = await generatePhaseMarkdown(phases[idx], expandedBrief)
+        markdowns.push(markdown)
+      }
+      setRoadmap({ expandedBrief, phases, markdowns })
     } catch (error) {
       console.error("Error generating roadmap:", error)
     } finally {
@@ -54,36 +98,46 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className=" mx-auto px-3 lg:px-4 lg:py-8 py-6 2xl:max-w-[85vw] xl:max-w-[95vw] lg:max-w-[100vw] md:max-w-[95vw] sm:max-w-[100vw]">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Sparkles className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="lg:text-3xl text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                RoadmapBP
-              </h1>
-              <p className="lg:text-muted-foreground lg:text-sm text-xs">Transform your project ideas into actionable roadmaps</p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 lg:px-0 px-3">
+      {/* Header */}
+      <header className="border-b sticky top-0 z-50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+        <div className="lg:max-w-[85vw] max-w-[95vw] mx-auto h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* <div className="relative w-8 h-8">
+              <Image 
+                src="/logo.png" 
+                alt="Lovable Logo" 
+                width={32} 
+                height={32}
+                className="object-contain"
+              />
+            </div> */}
+            <span className="font-semibold text-xl">RoadmapBP</span>
           </div>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="rounded-full"
+            >
+              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          </div>
+        </div>
+      </header>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-full"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+      {/* Main Content */}
+      <main className="lg:max-w-[85vw] max-w-[95vw] mx-auto py-12">
+        <div className="text-center mb-12">
+          <h1 className="lg:text-4xl text-2xl font-bold mb-2">Generate a roadmap for your project</h1>
+          <p className="text-muted-foreground">Create a roadmap for your project with AI</p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Input Section */}
+        {/* Input Section */}
+        <div className="max-w-3xl mx-auto">
           <InputSection
             projectBrief={projectBrief}
             setProjectBrief={setProjectBrief}
@@ -91,15 +145,15 @@ export default function Home() {
             onTextSubmit={handleTextSubmit}
             onFileContent={handleFileContent}
           />
-
-          
-
-          {/* Output Section */}
-          <div className="space-y-6">
-            <RoadmapDisplay roadmap={roadmap} isGenerating={isGenerating} />
-          </div>
         </div>
-      </div>
+
+        {/* Output Section */}
+        {(roadmap || isGenerating) && (
+          <div className="mt-8 max-w-4xl mx-auto">
+            <RoadmapDisplay roadmap={roadmap} isGenerating={isGenerating} steps={steps} currentStep={currentStep} />
+          </div>
+        )}
+      </main>
     </div>
   )
 }
