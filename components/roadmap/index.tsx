@@ -45,7 +45,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
           const header = headerRefs.current[lastOpened];
           if (header) {
             const rect = header.getBoundingClientRect();
-            const scrollTop = window.pageYOffset + rect.top - 32; // 32px offset
+            const scrollTop = window.pageYOffset + rect.top - 72; // 72px offset for sticky header
             window.scrollTo({ top: scrollTop, behavior: 'smooth' });
           }
         }, animationDuration);
@@ -188,7 +188,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                    transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
                     style={{ overflow: "hidden" }}
                   >
                     <CardContent>
