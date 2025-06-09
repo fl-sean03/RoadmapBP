@@ -24,6 +24,7 @@ import { AnimatePresence, motion } from "framer-motion"
 export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: RoadmapDisplayProps & { steps?: string[]; currentStep?: number }) => {
   const [openPhases, setOpenPhases] = useState<number[]>([0])
   const [copied, setCopied] = useState(false)
+  const [copiedPhase, setCopiedPhase] = useState<number | null>(null)
   const { theme } = useTheme()
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
   const headerRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -53,12 +54,17 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
     }
   }, [openPhases]);
 
-  const copyToClipboard = async (content: string) => {
+  const copyToClipboard = async (content: string, phaseIdx?: number) => {
     if (!content) return
     try {
       await navigator.clipboard.writeText(content)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      if (typeof phaseIdx === 'number') {
+        setCopiedPhase(phaseIdx)
+        setTimeout(() => setCopiedPhase(null), 2000)
+      } else {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
     } catch (err) {
       console.error("Failed to copy text: ", err)
     }
@@ -101,7 +107,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="lg:text-2xl text-xl font-bold">Project Roadmap Phases</h2>
+        <h2 className="lg:text-2xl text-xl font-bold">Project Roadmap</h2>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => copyToClipboard(roadmap.markdowns.join("\n\n---\n\n"))}>
             {copied ? <Check className="lg:h-4 lg:w-4 h-3 w-3 lg:mr-2 mr-1" /> : <Copy className="lg:h-4 lg:w-4 h-3 w-3 lg:mr-2 mr-1" />}
@@ -144,11 +150,35 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
                 className="cursor-pointer flex flex-row items-center justify-between w-full"
               >
                 <div>
-                  <CardTitle>Phase {idx + 1}</CardTitle>
+                  <CardTitle className="lg:text-xl text-lg">Phase {idx + 1}</CardTitle>
                   <CardDescription>{roadmap.phases[idx]?.title}</CardDescription>
                 </div>
-                <div>
-                  {isOpen ? <ChevronUp className="h-6 w-6" /> : <ChevronDown className="h-6 w-6" />}
+                <div className="flex flex-row items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); copyToClipboard(md, idx); }}>
+                    {copiedPhase === idx ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                    <span className="hidden lg:inline">{copiedPhase === idx ? "Copied!" : "Copy"}</span>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={e => e.stopPropagation()}>
+                        <Download className="h-4 w-4 mr-1" />
+                        <span className="hidden lg:inline">Download</span>
+                        <ChevronDown className="h-4 w-4 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleDownload("pdf", md, idx)}>
+                        Download as PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload("docx", md, idx)}>
+                        Download as DOCX
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload("txt", md, idx)}>
+                        Download as Text
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {isOpen ? <ChevronUp className="h-6 w-6 ml-2" /> : <ChevronDown className="h-6 w-6 ml-2" />}
                 </div>
               </CardHeader>
               <AnimatePresence initial={false}>
@@ -170,30 +200,6 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
                       )}
                       <div className="prose prose-base lg:prose-lg max-w-none dark:prose-invert mb-4 prose-p:my-2 prose-li:my-1">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{filteredMd}</ReactMarkdown>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => copyToClipboard(md)}>
-                          <Copy className="h-4 w-4 mr-1" /> Copy
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Download className="h-4 w-4 mr-1" /> Download
-                              <ChevronDown className="h-4 w-4 ml-1" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleDownload("pdf", md, idx)}>
-                              Download as PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownload("docx", md, idx)}>
-                              Download as DOCX
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownload("txt", md, idx)}>
-                              Download as Text
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
                     </CardContent>
                   </motion.div>
