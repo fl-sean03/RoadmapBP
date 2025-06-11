@@ -70,7 +70,7 @@ export default function Home() {
       const markdowns: string[] = []
       const executiveSummaries: string[] = []
       for (let idx = 0; idx < phases.length; idx++) {
-        const { markdown, executiveSummary } = await import("./actions").then(m => m.generatePhaseMarkdown(phases[idx], expandedBrief))
+        const { markdown, executiveSummary } = await import("./actions").then(m => m.generatePhaseMarkdown(phases[idx], expandedBrief, idx + 1))
         markdowns.push(markdown)
         executiveSummaries.push(executiveSummary)
       }
@@ -118,7 +118,7 @@ export default function Home() {
       const markdowns: string[] = []
       const executiveSummaries: string[] = []
       for (let idx = 0; idx < phases.length; idx++) {
-        const { markdown, executiveSummary } = await import("./actions").then(m => m.generatePhaseMarkdown(phases[idx], expandedBrief))
+        const { markdown, executiveSummary } = await import("./actions").then(m => m.generatePhaseMarkdown(phases[idx], expandedBrief, idx + 1))
         markdowns.push(markdown)
         executiveSummaries.push(executiveSummary)
       }

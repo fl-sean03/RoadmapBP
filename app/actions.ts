@@ -87,11 +87,12 @@ IMPORTANT: If the user input does not specify a timeline, always use future date
 }
 
 // Step 3: Generate markdown for each phase
-export async function generatePhaseMarkdown(phase: any, expandedBrief: string): Promise<{ markdown: string, executiveSummary: string }> {
+export async function generatePhaseMarkdown(phase: any, expandedBrief: string, phaseIndex?: number): Promise<{ markdown: string, executiveSummary: string }> {
   console.log("[generatePhaseMarkdown] Input:", { 
     phase: typeof phase === 'object' ? `[Phase object with title: ${phase.title || 'Unknown'}]` : typeof phase,
     expandedBriefType: typeof expandedBrief,
-    expandedBriefPreview: typeof expandedBrief === 'string' ? expandedBrief.substring(0, 100) + '...' : 'Not a string'
+    expandedBriefPreview: typeof expandedBrief === 'string' ? expandedBrief.substring(0, 100) + '...' : 'Not a string',
+    phaseIndex
   });
   
   // Extract only the essential context from the expanded brief
@@ -139,6 +140,11 @@ export async function generatePhaseMarkdown(phase: any, expandedBrief: string): 
   
   // Ensure phase is properly formatted for the prompt
   const phaseForPrompt = typeof phase === 'string' ? phase : JSON.stringify(phase);
+  
+  // Add explicit phase number instruction if provided
+  const phaseNumberInstruction = phaseIndex !== undefined 
+    ? `\n\nIMPORTANT: This is Phase ${phaseIndex}. Make sure to use exactly "Phase ${phaseIndex}" in the title.` 
+    : '';
   
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const response = await generateText({
@@ -235,7 +241,7 @@ IMPORTANT REQUIREMENTS:
 7. Include domain-specific terminology relevant to this project's industry
 
 IMPORTANT: If the input does not specify a timeline, use future dates for the phase timeline (starting from next week or next month). Do not use any past dates in the timeline.`,
-    prompt: `Phase Details:\n${phaseForPrompt}\n\nProject Context:\n${contextForPhase}`,
+    prompt: `Phase Details:\n${phaseForPrompt}\n\nProject Context:\n${contextForPhase}${phaseNumberInstruction}`,
   })
   const markdown = response.text;
   // Extract executive summary from markdown
@@ -273,7 +279,7 @@ export async function generateFullRoadmap(minimalInput: string): Promise<{
     const executiveSummaries: string[] = []
     for (let idx = 0; idx < phases.length; idx++) {
       console.log(`[generateFullRoadmap] Generating markdown for phase ${idx + 1}`)
-      const { markdown, executiveSummary } = await generatePhaseMarkdown(phases[idx], expandedBrief)
+      const { markdown, executiveSummary } = await generatePhaseMarkdown(phases[idx], expandedBrief, idx + 1)
       markdowns.push(markdown)
       executiveSummaries.push(executiveSummary)
     }
