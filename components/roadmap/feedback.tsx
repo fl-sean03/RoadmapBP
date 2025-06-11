@@ -4,38 +4,67 @@ import type React from "react"
 
 import { useState } from "react"
 import { ThumbsUp, ThumbsDown, Mail, CheckCircle, Loader2 } from "lucide-react"
+import { saveFeedbackAction } from "@/app/actions"
 
-export const Feedback = () => {
+interface FeedbackProps {
+  roadmapId?: string;
+}
+
+export const Feedback = ({ roadmapId }: FeedbackProps) => {
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null)
   const [email, setEmail] = useState("")
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleThumb = (type: "up" | "down") => {
     setFeedback(type)
+    setError(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!feedback) {
+      setError("Please select thumbs up or down before submitting")
+      return
+    }
+    
     setSubmitting(true)
-    // TODO: send feedback to backend or service
-    setTimeout(() => {
+    setError(null)
+    
+    try {
+      // Save feedback using server action
+      const result = await saveFeedbackAction({
+        roadmapId,
+        sentiment: feedback,
+        email: email || undefined
+      })
+      
+      if (result.success) {
+        setSubmitted(true)
+      } else {
+        setError(result.error || "Something went wrong. Please try again.")
+      }
+    } catch (err) {
+      console.error("Failed to submit feedback:", err)
+      setError("Failed to submit feedback. Please try again.")
+    } finally {
       setSubmitting(false)
-      setSubmitted(true)
-    }, 800)
+    }
   }
 
   if (submitted) {
     return (
-      <div className="mt-8 max-w-xl mx-auto">
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl shadow-lg border border-green-200 dark:border-green-800 p-8 flex flex-col items-center">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center mb-4 animate-bounce">
-            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+      <div className="mt-8 max-w-full mx-auto">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 lg:rounded-2xl rounded-xl shadow-md border border-green-200 dark:border-green-800 lg:p-8 p-4 flex flex-col items-center">
+          <div className="lg:w-16 lg:h-16 w-10 h-10 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center mb-4 animate-bounce">
+            <CheckCircle className="lg:w-8 lg:h-8 w-6 h-6 text-green-600 dark:text-green-400" />
           </div>
-          <h3 className="text-xl font-semibold text-green-800 dark:text-green-200 mb-2">
+          <h3 className="lg:text-xl text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
             Thank you for your feedback!
           </h3>
-          <p className="text-green-600 dark:text-green-300 text-center">
+          <p className="text-green-600 dark:text-green-300 lg:text-base text-sm text-center">
             Your input helps us improve our AI roadmap generator.
           </p>
         </div>
@@ -96,6 +125,12 @@ export const Feedback = () => {
             </button>
           </div>
 
+          {error && (
+            <div className="text-red-600 dark:text-red-400 text-sm text-center mb-3">
+              {error}
+            </div>
+          )}
+
           <form className="space-y-3" onSubmit={handleSubmit}>
             <div className="flex flex-row items-center gap-1 w-full">
               <div className="relative flex-1">
@@ -131,7 +166,7 @@ export const Feedback = () => {
               </button>
             </div>
 
-            {feedback && (
+            {feedback && !error && (
               <div className="mt-3 text-center">
                 <p className="lg:text-sm text-xs text-slate-500 dark:text-slate-400">
                   {feedback === "up"

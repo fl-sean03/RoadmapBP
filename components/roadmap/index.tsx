@@ -210,7 +210,7 @@ export const RoadmapDisplay = ({ roadmap, isGenerating, steps, currentStep }: Ro
           )
         })}
       </div>
-      <Feedback />
+      <Feedback roadmapId={roadmap.id} />
     </div>
   )
 } 

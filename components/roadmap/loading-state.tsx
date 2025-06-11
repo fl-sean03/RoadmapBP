@@ -19,7 +19,7 @@ export const LoadingState = ({ steps, currentStep }: LoadingStateProps) => {
   }, [currentStep, steps.length])
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden border-0 bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-800 shadow-xl">
+    <Card className="h-full flex flex-col overflow-hidden border-0 bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-800 shadow-md">
       <CardHeader className="flex-none pb-2 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
           <div>
@@ -48,7 +48,7 @@ export const LoadingState = ({ steps, currentStep }: LoadingStateProps) => {
           {steps.map((step, idx) => (
             <div
               key={idx}
-              className={`relative flex items-center lg:p-4 p-3 rounded-lg transition-all duration-300
+              className={`relative flex items-center lg:py-3 py-2 px-4 rounded-lg transition-all duration-300
                 ${idx === currentStep
                   ? "bg-blue-100/80 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-800 shadow-sm"
                   : idx < currentStep
@@ -58,16 +58,16 @@ export const LoadingState = ({ steps, currentStep }: LoadingStateProps) => {
             >
               <div className="mr-4">
                 {idx < currentStep ? (
-                  <div className="flex items-center justify-center lg:w-10 lg:h-10 w-7 h-7 rounded-full bg-green-200 dark:bg-green-800 ring-4 ring-green-100 dark:ring-green-900">
+                  <div className="flex items-center justify-center lg:w-8 lg:h-8 w-6 h-6 rounded-full bg-green-200 dark:bg-green-800 ring-4 ring-green-100 dark:ring-green-900">
                     <CheckCircle className="lg:w-5 lg:h-5 w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>
                 ) : idx === currentStep ? (
-                  <div className="flex items-center justify-center lg:w-10 lg:h-10 w-7 h-7 rounded-full bg-blue-200 dark:bg-blue-800 ring-4 ring-blue-100 dark:ring-blue-900 relative">
+                  <div className="flex items-center justify-center lg:w-8 lg:h-8 w-6 h-6 rounded-full bg-blue-200 dark:bg-blue-800 ring-4 ring-blue-100 dark:ring-blue-900 relative">
                     <div className="absolute inset-0 rounded-full border-2 border-blue-400 dark:border-blue-500 border-dashed animate-[spin_3s_linear_infinite]" />
                     <Loader2 className="lg:w-5 lg:h-5 w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center lg:w-10 lg:h-10 w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800 ring-4 ring-slate-100 dark:ring-slate-900">
+                  <div className="flex items-center justify-center lg:w-8 lg:h-8 w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 ring-4 ring-slate-100 dark:ring-slate-900">
                     <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{idx + 1}</span>
                   </div>
                 )}
@@ -75,7 +75,7 @@ export const LoadingState = ({ steps, currentStep }: LoadingStateProps) => {
 
               <div className="flex-1">
                 <p
-                  className={`lg:text-base text-sm font-medium ${
+                  className={`lg:text-sm text-xs font-medium ${
                     idx === currentStep
                       ? "text-blue-700 dark:text-blue-300"
                       : idx < currentStep
