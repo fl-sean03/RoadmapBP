@@ -28,6 +28,7 @@ export interface RoadmapDisplayProps {
     phases: RoadmapPhase[]
     markdowns: string[]
     executiveSummaries: string[]
+    id?: string
   }
   isGenerating: boolean
   steps?: string[]
