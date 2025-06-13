@@ -9,26 +9,21 @@ export async function expandBrief(minimalInput: string): Promise<{ expandedBrief
   console.log("[expandBrief] Input:", minimalInput)
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
-    system: `You are an expert project manager and technical architect with deep domain expertise across multiple industries. Your task is to expand the following brief into a comprehensive, detailed project description of at least 300-500 words.
+    system: `You are an expert project manager and strategic consultant. Your task is to expand the following brief into a comprehensive, detailed project description of at least 400-600 words.
 
 Your output MUST include:
-- A detailed project overview with specifics about the domain, scale, and core challenges
-- Key objectives and high-level goals (minimum 5, be specific and measurable)
-- Stakeholders and their roles (be specific to this industry and project type)
-- Potential challenges and risks (be specific to this technology/domain, not generic)
-- Strategic considerations (include industry-specific best practices)
-- Initial thoughts on project phases (with technical details for each phase)
-- Technical architecture decisions (specific technologies, frameworks, languages, services)
-- Integration requirements (with specific systems, APIs, or platforms)
-- Deployment strategy (specific infrastructure, cloud services, or hosting approaches)
+1. Executive Summary
+2. Objectives & Success Criteria (3–5 SMART goals)
+3. Scope & Key Features (in-scope vs. out-of-scope)
+4. Target Audience & Stakeholders
+5. Timeline & Milestones
+6. Resource Plan & Budget Estimates
+7. Risks & Mitigations
+8. Next Steps & Recommendations (3 concrete actions)
 
-CRITICAL: Your response MUST be deeply tailored to the specific project mentioned. Do NOT generate generic content that could apply to any project. Each section should contain technical specifics that only make sense for THIS PARTICULAR project.
+CRITICAL: Your response MUST be deeply tailored to the specific project mentioned. Do NOT generate generic content that could apply to any project. Each section should focus on the business development side of the project and high level technical specifics that only make sense for THIS PARTICULAR project.
 
-For technology projects, specify actual technologies, tools, frameworks, and architectural patterns.
-For business projects, specify actual methodologies, systems, and operational approaches.
-For creative projects, specify actual creative approaches, tools, and deliverable formats.
-
-IMPORTANT: Where the brief mentions design or planning, make concrete decisions and specify the actual choices (e.g., name the technology stack, database type, cloud provider, authentication method, etc.). Do not include generic tasks like "Design architecture" or "Choose database"—instead, specify what the architecture and database will be.
+IMPORTANT: Always try to focus on business side of the project along with high level technical details.
 
 Respond as a JSON object with a single field: 'expanded_brief'.
 The content should be thorough, technically specific, actionable, and suitable for use as the foundation for a strategic roadmap.`,
@@ -51,30 +46,26 @@ export async function generatePhases(expandedBrief: string): Promise<{ phases: a
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
     system: `Today's date is: ${today}.
-You are an expert project manager and technical architect with deep domain knowledge. Based on the expanded project brief, create a structured roadmap that divides the project into three clear phases. 
+You are an expert project manager with deep business development knowledge. Based on the expanded project brief, create a structured roadmap that divides the project into three clear phases. 
 
 For each phase, include:
-- Phase Title (be specific, not generic like "Planning Phase" - use industry-specific terminology)
+Phase X: [Name] (Timeline) (be specific, not generic like "Planning Phase" - use industry-specific terminology)
 - Start and End Dates (If the user input does not specify a timeline, use future dates starting from next week or next month, and do not use any past dates)
-- A detailed and comprehensive list of Tasks with Descriptions. 
+- Objectives: 2–3 clear, measurable goals
+- Key Activities: 3–5 bullet points of major tasks
+- Deliverables: What output comes at the end
+- Success Criteria: How we’ll know it’s done well 
 
 CRITICAL TASK INSTRUCTIONS:
 1. Each task must be highly SPECIFIC to this exact project - not generic tasks that could apply to any project
-2. Each task must include TECHNICAL SPECIFICS - name actual technologies, methods, frameworks, or approaches
-3. No task should be vague like "Design architecture" - instead, specify "Implement microservices architecture using AWS Lambda with Node.js for the backend APIs"
+2. Each task must include high level business development plan and TECHNICAL SPECIFICS 
 4. Each task description should include implementation details and acceptance criteria
 5. Tasks should differ substantially between different projects - if your tasks could apply to any project, they are TOO GENERIC
-6. Include at least 6-10 tasks per phase, with each task having multiple specific details
+6. Include at least 5-9 tasks per phase, with each task having multiple specific details.
 
-Include:
-- Suggested Success Metrics (include specific, measurable metrics relevant to this project type)
-- Next Steps (with specific handoff criteria and dependencies)
+IMPORTANT: NEVER create phases or tasks that are generic templates. Each phase, task, and metric should be uniquely tailored to this specific project's domain, technology choices, and business requirements.
 
-IMPORTANT: NEVER create phases or tasks that are generic templates. Each phase, task, and metric should be uniquely tailored to this specific project's domain, technology choices, and requirements.
-
-The phases should build on each other and account for dependencies. For larger or more complex projects, expand each section as needed to fully capture the scope and detail. Respond in JSON format as { phases: [...] } only.
-
-IMPORTANT: If the user input does not specify a timeline, always use future dates for the phase timeline (e.g., starting from next week or next month). Do not use any past dates in the timeline.`,
+The phases should build on each other and account for dependencies. For larger or more complex projects, expand each section as needed to fully capture the scope and detail. Respond in JSON format as { phases: [...] } only.`,
     prompt: promptString,
   })
   let phases: any[] = []
@@ -150,9 +141,7 @@ export async function generatePhaseMarkdown(phase: any, expandedBrief: string, p
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
     system: `Today's date is: ${today}.
-You are an expert project manager and technical architect with deep expertise in this specific domain. Generate detailed, technically precise markdown content for this phase of the project. Use the provided project context as essential background information.
-
-CRITICAL: Your output MUST be uniquely tailored to this specific project's domain, technologies, and requirements. DO NOT produce generic content that could apply to any project. Every section must contain technical specifics relevant ONLY to this particular project.
+You are an expert project manager with deep business knowledge. Generate high level, actionable, detailed markdown content for this phase of the project. Use the provided project context as essential background information.
 
 Your output MUST follow this exact format and structure:
 
@@ -160,7 +149,7 @@ Your output MUST follow this exact format and structure:
 
 ### Executive Summary
 
-[3-6 sentences summarizing the focus, goals, and approach for this phase. Include specific technical approaches and methodologies unique to this project.]
+[2-5 sentences summarizing the focus, goals, and approach for this phase. Include actionable steps and business development side of the specific project.]
 
 ### Timeline
 
@@ -175,30 +164,30 @@ Your output MUST follow this exact format and structure:
 
 2 to 3 sentences describing the objectives for this phase. and include the specific bullet points:
 
-* [Specific, measurable objective with technical details]
-* [Specific, measurable objective with technical details]
+* [Specific, measurable objective]
+* [Specific, measurable objective]
 * [Add more objectives as needed, don't stick to the 3 objectives - be specific to this project]
 
 ---
 
 ### Tasks
 
-#### 1. [Specific Task Title with Technical Details]
+#### 1. [Specific Task Title]
 
-[Detailed task description with implementation specifics]
+[Detailed task description with high level implementation specifics]
 
-* [Specific subtask with technical implementation details]
-* [Specific subtask with technical implementation details]
-* [Specific subtask with technical implementation details]
-* [Add more subtasks as needed, don't stick to the 3 subtasks - be specific to this project]
+* [Specific action]
+* [Specific action]
+* [Specific action]
+* [Add more actions as needed, don't stick to the 3 actions - be specific to this project]
 
-#### 2. [Specific Task Title with Technical Details]
+#### 2. [Specific Task Title]
 
-[Detailed task description with implementation specifics]
+[Detailed task description with high level implementation specifics]
 
-* [Specific subtask with technical implementation details]
-* [Specific subtask with technical implementation details]
-* [Add more subtasks as needed, don't stick to the 3 subtasks - be specific to this project]
+* [Specific action]
+* [Specific action]
+* [Add more actions as needed, don't stick to the 3 actions - be specific to this project]
 
 [Include as many detailed tasks as needed for this phase. At least 5-8 tasks are required for this phase.]
 
@@ -218,27 +207,24 @@ Your output MUST follow this exact format and structure:
 
 ### Strategic Considerations
 
-* [Project-specific consideration with technical implications]
-* [Project-specific consideration with technical implications]
-* [Project-specific consideration with technical implications]
+* [Project-specific consideration]
+* [Project-specific consideration]
+* [Project-specific consideration]
 * [Add more strategic considerations as needed, don't stick to the 3 strategic considerations - be specific to this project]
 
 ---
 
 ### Next Steps
 
-[Describe what will happen after this phase concludes, including specific handoffs, follow-ups, or preparations for the next phase. Include technical dependencies and transition criteria.]
+[Describe the next steps and recommendations. Include 2 to 3 concrete actions as bullet points.]
 
 ---
 
 IMPORTANT REQUIREMENTS:
-1. Every task, objective, and metric MUST be specific to this exact project's domain and technology
-2. Include detailed technical implementation specifics in each task
-3. DO NOT use generic project management language that could apply to any project
+1. Every task, objective, and metric MUST be specific to this exact project.
+2. Include high level business development plan and technical implementation specifics in each task
 4. Tasks should describe HOW something will be done, not just WHAT will be done
 5. Success metrics should be specific and measurable for this particular project type
-6. If this is a technology project, specify actual technologies, languages, frameworks, and architectural approaches
-7. Include domain-specific terminology relevant to this project's industry
 
 IMPORTANT: If the input does not specify a timeline, use future dates for the phase timeline (starting from next week or next month). Do not use any past dates in the timeline.`,
     prompt: `Phase Details:\n${phaseForPrompt}\n\nProject Context:\n${contextForPhase}${phaseNumberInstruction}`,
