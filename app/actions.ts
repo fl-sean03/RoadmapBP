@@ -9,24 +9,7 @@ export async function expandBrief(minimalInput: string): Promise<{ expandedBrief
   console.log("[expandBrief] Input:", minimalInput)
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
-    system: `You are an expert project manager and strategic consultant. Your task is to expand the following brief into a comprehensive, detailed project description of at least 400-600 words.
-
-Your output MUST include:
-1. Executive Summary
-2. Objectives & Success Criteria (3–5 SMART goals)
-3. Scope & Key Features (in-scope vs. out-of-scope)
-4. Target Audience & Stakeholders
-5. Timeline & Milestones
-6. Resource Plan & Budget Estimates
-7. Risks & Mitigations
-8. Next Steps & Recommendations (3 concrete actions)
-
-CRITICAL: Your response MUST be deeply tailored to the specific project mentioned. Do NOT generate generic content that could apply to any project. Each section should focus on the business development side of the project and high level technical specifics that only make sense for THIS PARTICULAR project.
-
-IMPORTANT: Always try to focus on business side of the project along with high level technical details.
-
-Respond as a JSON object with a single field: 'expanded_brief'.
-The content should be thorough, technically specific, actionable, and suitable for use as the foundation for a strategic roadmap.`,
+    system: `You are an expert project manager. A stakeholder has provided this brief idea:\n\n“${minimalInput}”\n\nUsing only that input, generate a lean project brief (≈500 words) for the minimal viable product.\n\nYour output MUST include:\n1. Must-Have Features & Scope (only the essentials)\n2. Actionable Tasks & Timeline (step-by-step build plan)\n3. Roles & Resources (who does what and when)\n4. Validation & Success Metrics (how to test MVP with real users)\n5. Next Steps (3 immediate action items to start development)\n\nCRITICAL: Focus SOLELY on building the minimal MVP—nothing theoretical or overly technical.\n- Zero in on must-have features only\n- List concrete tasks and milestones (not vague goals)\n- Avoid deep technical minutiae (no code snippets or hyperparam tuning)\n- Outline just enough roles, timeline, and validation to get a working prototype in front of users.\n\nRespond as a JSON object with a single field: 'expanded_brief'.\nThe content should be concise, actionable, and suitable as a practical foundation for a lean MVP roadmap.`,
     prompt: minimalInput,
   })
   let expandedBrief = response.text
@@ -49,21 +32,20 @@ export async function generatePhases(expandedBrief: string): Promise<{ phases: a
 You are an expert project manager with deep business development knowledge. Based on the expanded project brief, create a structured roadmap that divides the project into three clear phases. 
 
 For each phase, include:
-Phase X: [Name] (Timeline) (be specific, not generic like "Planning Phase" - use industry-specific terminology)
+Phase X: [Name] (Timeline) (be specific, not generic like "Planning Phase")
 - Start and End Dates (If the user input does not specify a timeline, use future dates starting from next week or next month, and do not use any past dates)
 - Objectives: 2–3 clear, measurable goals
 - Key Activities: 3–5 bullet points of major tasks
 - Deliverables: What output comes at the end
-- Success Criteria: How we’ll know it’s done well 
+- Success Criteria: How we'll know it's done well 
 
 CRITICAL TASK INSTRUCTIONS:
 1. Each task must be highly SPECIFIC to this exact project - not generic tasks that could apply to any project
-2. Each task must include high level business development plan and TECHNICAL SPECIFICS 
-4. Each task description should include implementation details and acceptance criteria
+2. Each task must focus on building the MVP and business development side of the project 
+4. Each task description should include implementation details
 5. Tasks should differ substantially between different projects - if your tasks could apply to any project, they are TOO GENERIC
 6. Include at least 5-9 tasks per phase, with each task having multiple specific details.
 
-IMPORTANT: NEVER create phases or tasks that are generic templates. Each phase, task, and metric should be uniquely tailored to this specific project's domain, technology choices, and business requirements.
 
 The phases should build on each other and account for dependencies. For larger or more complex projects, expand each section as needed to fully capture the scope and detail. Respond in JSON format as { phases: [...] } only.`,
     prompt: promptString,
@@ -141,7 +123,7 @@ export async function generatePhaseMarkdown(phase: any, expandedBrief: string, p
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
     system: `Today's date is: ${today}.
-You are an expert project manager with deep business knowledge. Generate high level, actionable, detailed markdown content for this phase of the project. Use the provided project context as essential background information.
+You are an expert project manager with deep business knowledge. Generate actionable, detailed markdown content for this phase of building the MVP. Use the provided project context as essential background information.
 
 Your output MUST follow this exact format and structure:
 
@@ -149,7 +131,7 @@ Your output MUST follow this exact format and structure:
 
 ### Executive Summary
 
-[2-5 sentences summarizing the focus, goals, and approach for this phase. Include actionable steps and business development side of the specific project.]
+[2-4 sentences summarizing the focus, goals, and approach for this phase. Include actionable steps of the specific MVP.]
 
 ### Timeline
 
@@ -222,7 +204,7 @@ Your output MUST follow this exact format and structure:
 
 IMPORTANT REQUIREMENTS:
 1. Every task, objective, and metric MUST be specific to this exact project.
-2. Include high level business development plan and technical implementation specifics in each task
+2. Include high level and detailed MVP building plan and implementation specifics in each task
 4. Tasks should describe HOW something will be done, not just WHAT will be done
 5. Success metrics should be specific and measurable for this particular project type
 
