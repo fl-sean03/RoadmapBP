@@ -2,13 +2,16 @@
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Plus, X, Paperclip } from "lucide-react"
+import { Send, Plus, X, Paperclip, ChevronDown, ChevronUp } from "lucide-react"
 import { FileUpload } from "@/components/file-upload"
+import { ApiKeyInput } from "@/components/api-key-input"
 import { useState } from "react"
 
 interface InputSectionProps {
   projectBrief: string
   setProjectBrief: (value: string) => void
+  apiKey: string
+  setApiKey: (value: string) => void
   isGenerating: boolean
   onTextSubmit: () => void
   onFileContent: (content: string) => void
@@ -17,11 +20,14 @@ interface InputSectionProps {
 export const InputSection = ({
   projectBrief,
   setProjectBrief,
+  apiKey,
+  setApiKey,
   isGenerating,
   onTextSubmit,
   onFileContent,
 }: InputSectionProps) => {
   const [showFileUpload, setShowFileUpload] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [filePreview, setFilePreview] = useState<{
     name: string;
     content: string;
@@ -50,9 +56,14 @@ export const InputSection = ({
     }
   }
 
+  const isValidInput = (projectBrief.trim() || filePreview);
+
   return (
     <div className="w-full bg-white dark:bg-slate-900 rounded-lg shadow-sm border ring-1 ring-slate-300 dark:ring-slate-500 focus-within:ring-1 focus-within:ring-slate-500 focus-within:border-slate-500 dark:focus-within:ring-slate-400 dark:focus-within:border-slate-400 transition-all duration-500">
       <div className="p-4">
+        {/* API Key Input - Always visible at the top */}
+        <ApiKeyInput apiKey={apiKey} setApiKey={setApiKey} className="mb-4" />
+        
         {/* File Preview */}
         {filePreview && (
           <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
@@ -82,17 +93,19 @@ export const InputSection = ({
         />
         
         <div className="flex justify-between items-center lg:mt-4 mt-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowFileUpload(!showFileUpload)}
-            className="rounded-full"
-          >
-            <Paperclip className="h-5 w-5 lg:w-6 lg:h-6" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowFileUpload(!showFileUpload)}
+              className="rounded-full"
+            >
+              <Paperclip className="h-5 w-5 lg:w-6 lg:h-6" />
+            </Button>
+          </div>
           <Button 
             onClick={handleSubmit}
-            disabled={(!projectBrief.trim() && !filePreview) || isGenerating}
+            disabled={!isValidInput || isGenerating}
             className="rounded-full lg:px-8 px-6"
           >
             {isGenerating ? (
