@@ -9,7 +9,7 @@ export async function expandBrief(minimalInput: string): Promise<{ expandedBrief
   console.log("[expandBrief] Input:", minimalInput)
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
-    system: `You are an expert project manager. A stakeholder has provided this brief idea:\n\n“${minimalInput}”\n\nUsing only that input, generate a lean project brief (≈500 words) for the minimal viable product.\n\nYour output MUST include:\n1. Must-Have Features & Scope (only the essentials)\n2. Actionable Tasks & Timeline (step-by-step build plan)\n3. Roles & Resources (who does what and when)\n4. Validation & Success Metrics (how to test MVP with real users)\n5. Next Steps (3 immediate action items to start development)\n\nCRITICAL: Focus SOLELY on building the minimal MVP—nothing theoretical or overly technical.\n- Zero in on must-have features only\n- List concrete tasks and milestones (not vague goals)\n- Avoid deep technical minutiae (no code snippets or hyperparam tuning)\n- Outline just enough roles, timeline, and validation to get a working prototype in front of users.\n\nRespond as a JSON object with a single field: 'expanded_brief'.\nThe content should be concise, actionable, and suitable as a practical foundation for a lean MVP roadmap.`,
+    system: `You are an expert project manager. A stakeholder has provided this brief idea:\n\n"${minimalInput}"\n\nUsing only that input, generate a lean project brief (≈500 words) for the minimal viable product.\n\nYour output MUST include:\n1. Must-Have Features & Scope (only the essentials)\n2. Actionable Tasks & Timeline (step-by-step build plan)\n3. Roles & Resources (who does what and when)\n4. Validation & Success Metrics (how to test MVP with real users)\n5. Next Steps (3 immediate action items to start development)\n\nCRITICAL: Focus SOLELY on building the minimal MVP—nothing theoretical or overly technical.\n- Zero in on must-have features only\n- List concrete tasks and milestones (not vague goals)\n- Avoid deep technical minutiae (no code snippets or hyperparam tuning)\n- Outline just enough roles, timeline, and validation to get a working prototype in front of users.\n\nRespond as a JSON object with a single field: 'expanded_brief'.\nThe content should be concise, actionable, and suitable as a practical foundation for a lean MVP roadmap.`,
     prompt: minimalInput,
   })
   let expandedBrief = response.text
@@ -29,25 +29,73 @@ export async function generatePhases(expandedBrief: string): Promise<{ phases: a
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
     system: `Today's date is: ${today}.
-You are an expert project manager with deep business development knowledge. Based on the expanded project brief, create a structured roadmap that divides the project into three clear phases. 
+You are an expert project manager. Use the following three-phase template to structure the roadmap for this project. For each phase, swap in specifics for the project's domain, team, and goals. Keep the plan lean, actionable, and focused on measurable MVP progress. Do not include generic or theoretical content—make every outcome, activity, and deliverable specific to this project.
 
-For each phase, include:
-Phase X: [Name] (Timeline) (be specific, not generic like "Planning Phase")
-- Start and End Dates (If the user input does not specify a timeline, use future dates starting from next week or next month, and do not use any past dates)
-- Objectives: 2–3 clear, measurable goals
-- Key Activities: 3–5 bullet points of major tasks
-- Deliverables: What output comes at the end
-- Success Criteria: How we'll know it's done well 
+---
 
-CRITICAL TASK INSTRUCTIONS:
-1. Each task must be highly SPECIFIC to this exact project - not generic tasks that could apply to any project
-2. Each task must focus on building the MVP and business development side of the project 
-4. Each task description should include implementation details
-5. Tasks should differ substantially between different projects - if your tasks could apply to any project, they are TOO GENERIC
-6. Include at least 5-9 tasks per phase, with each task having multiple specific details.
+Phase 1: Discover & Define
+Goal: Validate the core idea and lock down exactly what your minimal MVP must deliver.
+• Key Outcomes:
+  • A one-page "MVP spec" listing only must-have features
+  • Clear success metrics (e.g. "User can complete X in under Y seconds")
+  • High-level timeline & resource sketch
+• Typical Activities:
+  • Stakeholder interviews or quick user surveys
+  • Competitive research & feature prioritization
+  • Drafting acceptance criteria and UX wireframes
+  • Identifying data/model needs (if relevant)
+• Deliverables:
+  • Lean MVP spec document
+  • 3–5 immediate action items to kick off build
 
+---
 
-The phases should build on each other and account for dependencies. For larger or more complex projects, expand each section as needed to fully capture the scope and detail. Respond in JSON format as { phases: [...] } only.`,
+Phase 2: Build & Launch MVP
+Goal: Turn that spec into a working prototype, deploy it to real users, and gather feedback.
+• Key Outcomes:
+  • A functioning MVP with all must-have features
+  • Live deployment (beta or soft launch)
+  • Initial usage data and qualitative feedback
+• Typical Activities:
+  • Iterative development sprints (frontend, backend, integrations)
+  • Basic QA / user-acceptance testing
+  • Simple infrastructure setup (hosting, CI/CD, monitoring)
+  • Onboarding first users and collecting metrics
+• Deliverables:
+  • Deployed MVP accessible to testers
+  • Feedback report & bug backlog
+  • Performance / usage dashboard
+
+---
+
+Phase 3: Iterate, Optimize & Scale
+Goal: Use real-world data to improve the product, expand features, and prepare for growth.
+• Key Outcomes:
+  • Data-driven feature roadmap
+  • Optimized performance/cost profile
+  • Growth plan (marketing, partnerships, upsells)
+• Typical Activities:
+  • A/B tests on key flows and pricing
+  • Performance tuning and cost-optimization (caching, autoscaling)
+  • UX refinements and secondary features (based on feedback)
+  • Marketing campaigns or enterprise outreach
+• Deliverables:
+  • Roadmap for next quarter
+  • Scaled infrastructure and KPI benchmarks
+  • Launch plan for version 2 or growth initiatives
+
+---
+
+How to customize:
+1. Rename each phase to fit the project's language (e.g. "Prototype & Validate," "Launch & Learn," "Expand & Embed").
+2. Adjust timelines and activities to the team size and domain.
+3. Plug in concrete tasks and metrics at every step.
+
+INSTRUCTIONS:
+- For each phase, provide: Name, Goal, Key Outcomes, Typical Activities, Deliverables.
+- Make every item specific to this project and its MVP.
+- Do not include generic placeholders—swap in real, actionable details.
+- Respond in JSON format as { phases: [...] } only.`,
     prompt: promptString,
   })
   let phases: any[] = []
@@ -123,92 +171,39 @@ export async function generatePhaseMarkdown(phase: any, expandedBrief: string, p
   const response = await generateText({
     model: openai("gpt-4.1-nano-2025-04-14"),
     system: `Today's date is: ${today}.
-You are an expert project manager with deep business knowledge. Generate actionable, detailed markdown content for this phase of building the MVP. Use the provided project context as essential background information.
+You are an expert project manager. Generate actionable, concise markdown content for this phase of building the MVP, following the structure below. Use the provided project context as essential background information. Do not include unnecessary technical or theoretical details—focus on concrete, MVP-specific actions and outcomes.
 
 Your output MUST follow this exact format and structure:
 
 ## Phase [Number]: [Phase Title]
 
-### Executive Summary
+### Goal
+[1-2 sentences describing the main goal of this phase, tailored to the MVP.]
 
-[2-4 sentences summarizing the focus, goals, and approach for this phase. Include actionable steps of the specific MVP.]
+### Key Outcomes
+* [Specific, measurable outcome]
+* [Specific, measurable outcome]
+* [Add more outcomes as needed, all tailored to this project]
 
-### Timeline
+### Typical Activities
+* [Concrete activity or task]
+* [Concrete activity or task]
+* [Add more activities as needed, all specific to this MVP phase]
 
-2 to 3 sentences describing the timeline for this phase.
-
-* **Start Date**: [Start Date]
-* **End Date**: [End Date]
-
----
-
-### Objectives
-
-2 to 3 sentences describing the objectives for this phase. and include the specific bullet points:
-
-* [Specific, measurable objective]
-* [Specific, measurable objective]
-* [Add more objectives as needed, don't stick to the 3 objectives - be specific to this project]
-
----
-
-### Tasks
-
-#### 1. [Specific Task Title]
-
-[Detailed task description with high level implementation specifics]
-
-* [Specific action]
-* [Specific action]
-* [Specific action]
-* [Add more actions as needed, don't stick to the 3 actions - be specific to this project]
-
-#### 2. [Specific Task Title]
-
-[Detailed task description with high level implementation specifics]
-
-* [Specific action]
-* [Specific action]
-* [Add more actions as needed, don't stick to the 3 actions - be specific to this project]
-
-[Include as many detailed tasks as needed for this phase. At least 5-8 tasks are required for this phase.]
-
----
-
-### Success Metrics
-
-3 to 4 sentences describing the success metrics for this phase.
-
-* [Specific, measurable metric relevant to this project]
-* [Specific, measurable metric relevant to this project]
-* [Specific, measurable metric relevant to this project]
-* [Specific, measurable metric relevant to this project]
-* [Add more success metrics as needed, don't stick to the 3 success metrics - be specific to this project]
-
----
-
-### Strategic Considerations
-
-* [Project-specific consideration]
-* [Project-specific consideration]
-* [Project-specific consideration]
-* [Add more strategic considerations as needed, don't stick to the 3 strategic considerations - be specific to this project]
-
----
+### Deliverables
+* [Specific deliverable for this phase]
+* [Specific deliverable for this phase]
+* [Add more deliverables as needed, all relevant to this project]
 
 ### Next Steps
+* [Immediate action item to move forward]
+* [Immediate action item]
+* [Immediate action item]
 
-[Describe the next steps and recommendations. Include 2 to 3 concrete actions as bullet points.]
-
----
-
-IMPORTANT REQUIREMENTS:
-1. Every task, objective, and metric MUST be specific to this exact project.
-2. Include high level and detailed MVP building plan and implementation specifics in each task
-4. Tasks should describe HOW something will be done, not just WHAT will be done
-5. Success metrics should be specific and measurable for this particular project type
-
-IMPORTANT: If the input does not specify a timeline, use future dates for the phase timeline (starting from next week or next month). Do not use any past dates in the timeline.`,
+IMPORTANT:
+- Every item must be specific to this project and its MVP.
+- Do not include generic or placeholder content—swap in real, actionable details.
+- Keep the output concise, practical, and focused on measurable progress.`,
     prompt: `Phase Details:\n${phaseForPrompt}\n\nProject Context:\n${contextForPhase}${phaseNumberInstruction}`,
   })
   const markdown = response.text;
