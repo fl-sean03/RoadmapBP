@@ -2,13 +2,25 @@
 
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
+import { createOpenAI } from "@ai-sdk/openai"
 import { saveRoadmap, saveFeedback } from './lib/db-helpers'
 
+// Helper function to get the OpenAI client with the provided API key
+const getOpenAIClient = (apiKey?: string) => {
+  if (apiKey) {
+    return createOpenAI({ apiKey });
+  }
+  return openai;
+};
+
 // Step 1: Expand minimal input into a detailed project brief
-export async function expandBrief(minimalInput: string): Promise<{ expandedBrief: string }> {
+export async function expandBrief(minimalInput: string, apiKey?: string): Promise<{ expandedBrief: string }> {
   console.log("[expandBrief] Input:", minimalInput)
+  
+  const client = getOpenAIClient(apiKey);
+  
   const response = await generateText({
-    model: openai("gpt-4.1-nano-2025-04-14"),
+    model: client("gpt-4.1-nano-2025-04-14"),
     system: `You are an expert project manager. A stakeholder has provided this brief idea:\n\n"${minimalInput}"\n\nUsing only that input, generate a lean project brief (≈500 words) for the minimal viable product.\n\nYour output MUST include:\n1. Must-Have Features & Scope (only the essentials)\n2. Actionable Tasks & Timeline (step-by-step build plan)\n3. Roles & Resources (who does what and when)\n4. Validation & Success Metrics (how to test MVP with real users)\n5. Next Steps (3 immediate action items to start development)\n\nCRITICAL: Focus SOLELY on building the minimal MVP—nothing theoretical or overly technical.\n- Zero in on must-have features only\n- List concrete tasks and milestones (not vague goals)\n- Avoid deep technical minutiae (no code snippets or hyperparam tuning)\n- Outline just enough roles, timeline, and validation to get a working prototype in front of users.\n\nRespond as a JSON object with a single field: 'expanded_brief'.\nThe content should be concise, actionable, and suitable as a practical foundation for a lean MVP roadmap.`,
     prompt: minimalInput,
   })
@@ -22,12 +34,15 @@ export async function expandBrief(minimalInput: string): Promise<{ expandedBrief
 }
 
 // Step 2: Generate structured JSON with 3 phases
-export async function generatePhases(expandedBrief: string): Promise<{ phases: any[] }> {
+export async function generatePhases(expandedBrief: string, apiKey?: string): Promise<{ phases: any[] }> {
   console.log("[generatePhases] Input:", expandedBrief)
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const promptString = typeof expandedBrief === 'string' ? expandedBrief : JSON.stringify(expandedBrief);
+  
+  const client = getOpenAIClient(apiKey);
+  
   const response = await generateText({
-    model: openai("gpt-4.1-nano-2025-04-14"),
+    model: client("gpt-4.1-nano-2025-04-14"),
     system: `Today's date is: ${today}.
 You are an expert project manager. Use the following three-phase template to structure the roadmap. Always hyper-tailor each phase's activities and deliverables to the specifics of the user's idea or project—focus on concrete, actionable insights that directly move toward the MVP or next milestone.
 
@@ -98,7 +113,7 @@ CRITICAL INSTRUCTIONS:
 }
 
 // Step 3: Generate markdown for each phase
-export async function generatePhaseMarkdown(phase: any, expandedBrief: string, phaseIndex?: number): Promise<{ markdown: string, executiveSummary: string }> {
+export async function generatePhaseMarkdown(phase: any, expandedBrief: string, phaseIndex?: number, apiKey?: string): Promise<{ markdown: string, executiveSummary: string }> {
   console.log("[generatePhaseMarkdown] Input:", { 
     phase: typeof phase === 'object' ? `[Phase object with title: ${phase.title || 'Unknown'}]` : typeof phase,
     expandedBriefType: typeof expandedBrief,
@@ -157,9 +172,11 @@ export async function generatePhaseMarkdown(phase: any, expandedBrief: string, p
     ? `\n\nIMPORTANT: This is Phase ${phaseIndex}. Make sure to use exactly "Phase ${phaseIndex}" in the title.` 
     : '';
   
+  const client = getOpenAIClient(apiKey);
+  
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const response = await generateText({
-    model: openai("gpt-4.1-nano-2025-04-14"),
+    model: client("gpt-4.1-nano-2025-04-14"),
     system: `Today's date is: ${today}.
 You are an expert project manager. Generate actionable, detailed markdown content for this phase of building the MVP, following the structure below. Hyper-tailor every point to the specifics of the project—focus on specific actionable insights. Do not include generic or theoretical details.
 
@@ -212,7 +229,7 @@ IMPORTANT:
 }
 
 // Orchestrator: Full roadmap generation
-export async function generateFullRoadmap(minimalInput: string): Promise<{
+export async function generateFullRoadmap(minimalInput: string, apiKey?: string): Promise<{
   expandedBrief: string,
   phases: any[],
   markdowns: string[],
@@ -221,13 +238,13 @@ export async function generateFullRoadmap(minimalInput: string): Promise<{
 }> {
   try {
     console.log("[generateFullRoadmap] Starting full roadmap generation")
-    const { expandedBrief } = await expandBrief(minimalInput)
-    const { phases } = await generatePhases(expandedBrief)
+    const { expandedBrief } = await expandBrief(minimalInput, apiKey)
+    const { phases } = await generatePhases(expandedBrief, apiKey)
     const markdowns: string[] = []
     const executiveSummaries: string[] = []
     for (let idx = 0; idx < phases.length; idx++) {
       console.log(`[generateFullRoadmap] Generating markdown for phase ${idx + 1}`)
-      const { markdown, executiveSummary } = await generatePhaseMarkdown(phases[idx], expandedBrief, idx + 1)
+      const { markdown, executiveSummary } = await generatePhaseMarkdown(phases[idx], expandedBrief, idx + 1, apiKey)
       markdowns.push(markdown)
       executiveSummaries.push(executiveSummary)
     }
