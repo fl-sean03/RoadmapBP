@@ -126,15 +126,11 @@ export default function Home() {
     
     // Execute the appropriate action based on what was requested
     if (apiKeyAction === "text" && projectBrief.trim()) {
-      // Small delay to ensure state updates before proceeding
-      setTimeout(() => {
-        handleTextSubmitInternal();
-      }, 50);
+      // Use the new API key directly
+      handleTextSubmitInternal();
     } else if (apiKeyAction === "file" && fileContent) {
-      // Small delay to ensure state updates before proceeding
-      setTimeout(() => {
-        handleFileContentInternal(fileContent);
-      }, 50);
+      // Use the new API key directly
+      handleFileContentInternal(fileContent);
     }
     
     // Reset
@@ -202,7 +198,12 @@ export default function Home() {
       setDbSaveStatus('error')
       
       // Handle specific API errors
-      if (error.message?.includes('401')) {
+      if (error.message?.includes('API key is required')) {
+        showError(
+          "API Key Required", 
+          "You must provide your own OpenAI API key to generate a roadmap."
+        );
+      } else if (error.message?.includes('401')) {
         showError(
           "API Key Error", 
           "Your OpenAI API key was rejected. Please check that you've entered a valid API key with sufficient credits."
@@ -284,7 +285,12 @@ export default function Home() {
       setDbSaveStatus('error')
       
       // Handle specific API errors
-      if (error.message?.includes('401')) {
+      if (error.message?.includes('API key is required')) {
+        showError(
+          "API Key Required", 
+          "You must provide your own OpenAI API key to generate a roadmap."
+        );
+      } else if (error.message?.includes('401')) {
         showError(
           "API Key Error", 
           "Your OpenAI API key was rejected. Please check that you've entered a valid API key with sufficient credits."
@@ -402,7 +408,10 @@ export default function Home() {
             }}>
               Cancel
             </Button>
-            <Button onClick={handleApiKeySubmit}>
+            <Button onClick={() => {
+              setApiKey(tempApiKey);
+              setShowApiKeyDialog(false);
+            }}>
               Continue
             </Button>
           </DialogFooter>

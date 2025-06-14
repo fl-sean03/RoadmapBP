@@ -7,10 +7,10 @@ import { saveRoadmap, saveFeedback } from './lib/db-helpers'
 
 // Helper function to get the OpenAI client with the provided API key
 const getOpenAIClient = (apiKey?: string) => {
-  if (apiKey) {
-    return createOpenAI({ apiKey });
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("API key is required");
   }
-  return openai;
+  return createOpenAI({ apiKey });
 };
 
 // Step 1: Expand minimal input into a detailed project brief
