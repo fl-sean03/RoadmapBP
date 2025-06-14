@@ -89,7 +89,7 @@ export const InputSection = ({
           placeholder="Ask RoadmapBP to create a roadmap for my..."
           value={projectBrief}
           onChange={(e) => setProjectBrief(e.target.value)}
-          className="min-h-[100px] bg-transparent dark:bg-transparent resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 lg:text-lg text-base px-0 py-2"
+          className="min-h-[100px] bg-transparent dark:bg-transparent resize-none border border-slate-300 dark:border-slate-600 focus-visible:ring-0 focus-visible:ring-offset-0 lg:text-base text-sm px-2 py-2"
         />
         
         <div className="flex justify-between items-center lg:mt-4 mt-3">
